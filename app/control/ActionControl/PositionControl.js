@@ -28,7 +28,7 @@ let PositionControl = Backbone.Model.extend({
             self.set('currentTarget', Waypoints.nextWp(true))  // { lat: 7.88477600, lon: 98.38915320 };
             self.set('wpData', Waypoints.wpData)
 
-            self.updateTarget() // use homve(id 0) as starting point and set target to id 1 
+            self.updateTarget() // use home (id 0) as starting point and set target to id 1 
         })
 
     },
@@ -142,6 +142,7 @@ let PositionControl = Backbone.Model.extend({
         // console.log('headingRelativeAngle', headingRelativeAngle);
     },
 
+    turnTryingNumber: 0,
     //convert body turning to motor turning
     turn: function (headingRelativeAngle, finishCallback) {
 
@@ -168,17 +169,31 @@ let PositionControl = Backbone.Model.extend({
 
 
         let maxMovingTime = this.attributes.maxMovingTime
-      
+
         // is it possible to make it dynamic?
         // for example by detect number of trying to turn to the angle
         // and increase number of timeout until curtain max.
-        
+
         let timeout = this.attributes.minMovingTime //500;//1000 
 
         let headingRelativeAngleAbs = Math.abs(headingRelativeAngle)
 
-        if (headingRelativeAngleAbs < 60) {
-            timeout = timeout * headingRelativeAngleAbs / 60
+        // if (headingRelativeAngleAbs < 60) {
+        //     timeout = timeout * headingRelativeAngleAbs / 60
+        // } else if (headingRelativeAngleAbs < 20) {
+        // }
+
+        this.turnTryingNumber++
+
+        if (headingRelativeAngleAbs < 45) {
+            this.turnTryingNumber = 0
+            timeout = timeout * headingRelativeAngleAbs / maxServoMove
+        }
+
+        timeout = timeout + (this.turnTryingNumber * 100)
+
+        if (timeout > maxMovingTime) {
+            timeout = maxMovingTime
         }
 
         this.set('turnTime', timeout)
