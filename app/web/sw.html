@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <title>sw Interface</title>
+  <meta http-equiv="Cache-control" content="no-cache">
+  <meta http-equiv="Expires" content="-1">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="application-name" content="sw">
+
+  <link href="lib/jquery.mobile/jquery.mobile-1.4.5.min.css" rel="stylesheet" />
+  <!-- <script src="lib/jquery.mobile/jquery.mobile.theme-1.4.5.min.css"></script> -->
+
+  <script src="lib/underscore.js"></script>
+  <script src="lib/jquery-2.2.4.min.js"></script>
+
+  <script src="lib/jquery.mobile/jquery.mobile-1.4.5.min.js"></script>
+
+  <script src="lib/socket.io.min.js"></script>
+  <script src="lib/NwLib.js"></script>
+  <script src="NwWsClient.js"></script>
+
+  <script src="sw.js?3"></script>
+  <script>
+      //  window.location.reload(true)
+  </script>
+  <style>
+
+  </style>
+</head>
+
+<body>
+  <form>
+    <label for="flip-1">Food feeder:</label>
+    <select class="food_feeder_flip" name="flip-1" id="f_0" data-role="slider">
+      <option value="off">Off</option>
+      <option value="on">On</option>
+    </select>
+    <select class="food_feeder_flip" id="f_1" data-role="slider">
+      <option value="off">Off</option>
+      <option value="on">On</option>
+    </select>
+    <select class="food_feeder_flip" id="f_2" data-role="slider">
+      <option value="off">Off</option>
+      <option value="on">On</option>
+    </select>
+    <select class="food_feeder_flip" id="f_3" data-role="slider">
+      <option value="off">Off</option>
+      <option value="on">On</option>
+    </select>
+    <select class="food_feeder_flip" id="f_4" data-role="slider">
+      <option value="off">Off</option>
+      <option value="on">On</option>
+    </select>
+    <select class="food_feeder_flip" id="f_5" data-role="slider">
+      <option value="off">Off</option>
+      <option value="on">On</option>
+    </select>
+    <select class="food_feeder_flip" id="f_6" data-role="slider">
+      <option value="off">Off</option>
+      <option value="on">On</option>
+    </select>
+    <select class="food_feeder_flip" id="f_7" data-role="slider">
+      <option value="off">Off</option>
+      <option value="on">On</option>
+    </select>
+
+  </form>
+
+  <form>
+    <label for="flip-1">Water feeder:</label>
+    <select class="gpio_flip" name="flip-1" id="D13" data-role="slider">
+      <option value="off">Off</option>
+      <option value="on">On</option>
+    </select>
+
+  </form>
+
+  <form>
+    <input type="button" class="ui-btn food_feeder_button" pid="0" value="0">
+    <input type="button" class="ui-btn food_feeder_button" pid="1" value="1">
+    <input type="button" class="ui-btn food_feeder_button" pid="2" value="2">
+    <input type="button" class="ui-btn food_feeder_button" pid="3" value="3">
+    <input type="button" class="ui-btn food_feeder_button" pid="4" value="4">
+    <input type="button" class="ui-btn food_feeder_button" pid="5" value="5">
+    <input type="button" class="ui-btn food_feeder_button" pid="6" value="6">
+    <input type="button" class="ui-btn food_feeder_button" pid="7" value="7">
+
+    <!-- <button class="ui-btn food_feeder_button" pid="2">2</button>
+    <button class="ui-btn food_feeder_button" pid="3">3</button>
+    <button class="ui-btn food_feeder_button" pid="4">4</button>
+    <button class="ui-btn food_feeder_button" pid="5">5</button>
+    <button class="ui-btn food_feeder_button" pid="6">6</button>
+    <button class="ui-btn food_feeder_button" pid="7">7</button>
+    <button class="ui-btn food_feeder_button" pid="8">8</button> -->
+
+  </form>
+  <input type="button" class="ui-btn set_pcf_series"value="set_pcf_series">
+  <!-- <form>
+    <label for="flip-1">Conveyor:</label>
+    <select class="food_feeder_flip" name="flip-1" id="f_7" data-role="slider">
+      <option value="off">Off</option>
+      <option value="on">On</option>
+    </select>
+
+  </form> -->
+</body>
+
+</html>

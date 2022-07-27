@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>config</title>
+
+    <meta charset="utf-8">
+    <title>config</title>
+    <meta http-equiv="Cache-control" content="no-cache">
+    <meta http-equiv="Expires" content="-1">
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="application-name" content="config">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+
+    <script src="../lib/underscore.js"></script>
+    <script src="../lib/jquery-2.2.4.min.js"></script>
+
+    <link href="../lib/jquery.mobile/jquery.mobile-1.4.5.min.css" rel="stylesheet" />
+    <script src="../lib/jquery.mobile/jquery.mobile-1.4.5.min.js"></script>
+
+    <script src="../lib/zipson.min.js"></script>
+
+    <script src="../lib/socket.io.min.js"></script>
+    <script src="../lib/NwLib.js"></script>
+    <script src="../NwWsClient.js"></script>
+
+    <script src="../initConn.js"></script>
+
+    <style>
+        body {
+            font-family: Courier, monospaced;
+            font-size: 10px;
+            font-weight: bold;
+
+        }
+
+        #eq>span {
+            height: 120px;
+            float: left;
+            margin: 15px
+        }
+
+        textarea.ui-input-text {
+            height: inherit !important
+        }
+
+        #map {
+            height: 500px;
+        }
+    </style>
+    <script>
+
+        window.oncontextmenu = function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            return false;
+        };
+    </script>
+</head>
+
+<body>
+
+    <div class="ui-field-contain">
+        <fieldset class="ui-grid-a">
+                <div class="ui-block-a"> <textarea name="" id="msg" style="width: 100%;" cols="30" rows="44"></textarea>
+            </div>
+                <div class="ui-block-b">
+                <button id="restart" data-mini="true">restart</button>
+                <button id="servo_on" data-mini="true">servo on</button>
+                power
+                <input type="range" id="slider-power" step="1" min="30" max="160" value="30">
+                rudder offset
+                <input type="range" id="slider-rudder" step="0.1" min="30" max="160" value="90">
+                elevator offset
+                <input type="range" id="slider-elevator" step="0.1" min="30" max="160" value="90">
+                ailerons offset
+                <input type="range" id="slider-ailerons" step="0.1" min="30" max="160" value="90">
+                <select name="select-native-2" id="select_gyroMode" data-mini="true">
+                    <option value="auto">Auto Gyro</option>
+                    <option value="normal">Normal Gyro</option>
+                    <option value="off">Off Gyro</option>
+                </select>
+            </div>
+
+        </fieldset>
+
+    </div>
+
+    <script>
+
+        $(function () {
+
+            if (location.hostname.indexOf('192.168.') == -1) {//== "rutapon.totddns.com"
+                wsClient.oldcallService = wsClient.callService
+                wsClient.callService = function (cmd, data, cb) {
+                    wsClient.oldcallService('call_node', { cmd: cmd, data: data, did: 'a8heO-ommPuqzGWQMaB9YgPyHlgyIKR_CxTtq5JJBMk' }, cb)
+                }
+            }
+            
+            let status = false
+            let testData = null
+            function updateInfo() {
+                wsClient.callService('getInfo', {}, function (result) {
+                    // result = zipson.parse(result)
+                    //var zipsonStringified = zipson.stringify(result, { detectUtcTimestamps: true });
+                    //console.log(zipsonStringified.length, JSON.stringify(result).length);
+                    //result = JSON.stringify(result)
+
+                    status = result.status;
+                    testData = result.testData
+                    $('#msg').empty();
+                    $('#msg').append("Status: " + JSON.stringify(result.status) + '\n')
+
+                    for (const key in result.gps) {
+                        if (Object.hasOwnProperty.call(result.gps, key)) {
+                            const element = result.gps[key];
+                            $('#msg').append(key + ": " + JSON.stringify(element) + '\n')
+
+                        }
+                    }
+                    $('#msg').append("SENSOR\n")
+                    for (const key in result.sensor) {
+                        if (Object.hasOwnProperty.call(result.sensor, key)) {
+                            const element = result.sensor[key];
+                            $('#msg').append(key + ": " + JSON.stringify(element) + '\n')
+
+                        }
+                    }
+                    delete result.testData.wpData
+                    $('#msg').append("TEST DATA: " + JSON.stringify(result.testData))
+
+                    updateStatus()
+                })
+            }
+
+            function updateStatus() {
+                if (status) {
+                    $('#servo_on').text('servo on: ' + status.control_mode)
+                    $('#ActionControl').text('ActionControl: ' + testData.ActionControl.enable)
+       
+                }
+            }
+
+            updateInfo()
+
+            setInterval(() => {
+                updateInfo()
+            }, 1000);
+
+            let lastSliderValue = '30'
+
+            function updateEngPower(force) {
+                var s1value = parseInt($("#slider-power").val())
+                ///var isUpdate = false
+                var dataObj = {}
+                if (force || lastSliderValue != s1value) {
+
+                    lastSliderValue = s1value
+                    dataObj.s = s1value
+                    //isUpdate = true
+                    console.log(lastSliderValue);
+                    wsClient.callService('control', dataObj, function (result) {
+                        //result = JSON.stringify(result)
+                    })
+                }
+            }
+
+            let currentServoOffset = {
+                ailerons: 0,
+                elevator: 0,
+                rudder: 0
+            }
+
+            function updateServoOffset() {
+                let ailerons = 90 - parseFloat($("#slider-ailerons").val())
+                let elevator = 90 - parseFloat($("#slider-elevator").val())
+                let rudder = 90 - parseFloat($("#slider-rudder").val())
+
+                if (currentServoOffset.ailerons != ailerons ||
+                    currentServoOffset.elevator != elevator ||
+                    currentServoOffset.rudder != rudder
+                ) {
+
+                    currentServoOffset.ailerons = ailerons
+                    currentServoOffset.elevator = elevator
+                    currentServoOffset.rudder = rudder
+                    // console.log('ailerons', ailerons, currentServoOffset);
+                    wsClient.callService('setServoOffset', currentServoOffset, function (result) { })
+                }
+            }
+
+            function loadServoOffset() {
+                //currentServoOffset.ailerons++;
+                wsClient.callService('getServoOffset', {}, function (data) {
+                    if (data.ailerons) {
+                        currentServoOffset.ailerons = data.ailerons
+                    }
+                    if (data.elevator) {
+                        currentServoOffset.elevator = data.elevator
+                    }
+                    if (data.rudder) {
+                        currentServoOffset.rudder = data.rudder
+                    }
+
+                    $("#slider-ailerons").val(90 - currentServoOffset.ailerons).slider("refresh");
+                    $("#slider-elevator").val(90 - currentServoOffset.elevator).slider("refresh");
+                    $("#slider-rudder").val(90 - currentServoOffset.rudder).slider("refresh");
+                })
+            }
+
+            loadServoOffset()
+
+            setInterval(() => {
+                updateServoOffset()
+                updateEngPower()
+            }, 300);
+
+
+            $('#logdata').click(function () {
+                if (status) {
+
+                    let newlogdata = !(status.logData)
+                    wsClient.callService('logDataState', newlogdata, function (result) { })
+                }
+            })
+ 
+            $('#servo_on').click(function () {
+                if (status) {
+
+                    if (status.control_mode == 'off') {
+                        status.control_mode = 'on'
+                    } else {
+                        status.control_mode = 'off'
+                    }
+
+                    wsClient.callService('control_mode', status.control_mode, function (result) {
+                        //console.log(result);
+                        //result = JSON.stringify(result)
+                        if (status.control_mode == 'on') {
+                            setTimeout(() => {
+                                //console.log('updateEngPower');
+                                updateEngPower(true)
+                            }, 300);
+                        }
+                        //if (cb) cb(mode)
+                    })
+                }
+            })
+
+            $('#restart').click(function () {
+                wsClient.callService('restart', {}, function () { })
+            })
+
+            $('#select_gyroMode').on('change', function (value) {
+                var mode = $('#select_gyroMode').val();
+                wsClient.callService('setGyroMode', mode, function (result) {
+                    //result = JSON.stringify(result)
+                    if (cb) cb(mode)
+                })
+           
+            })
+        })
+    </script>
+
+</body>
+
+</html>

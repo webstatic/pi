@@ -1,0 +1,62 @@
+body {
+	margin: 0px;
+	padding: 0px;
+	width:100%;
+	height:100%;
+}
+joystick {
+	display: block;
+	background: red;
+	border-style:solid;
+	border-width:2px;
+	border-color:black;
+	position: absolute;
+	top: -2px;
+	left: -2px;
+	width: 50px;
+	height: 50px;
+	border-radius:50%;
+}
+joystickbackground {
+	display:block;
+	position: absolute;
+	left: 5px;
+	bottom: 5px;
+	background:#00A3FF;
+	border-style:solid;
+	border-width:2px;
+	border-color:black;
+	border-radius:50%;
+	width: 150px;
+	height: 150px;
+}
+joystickhitzone {
+	display:block;
+	position: absolute;
+	left: 48px;
+	top: 48px;
+	background:#004F7C;
+	border-style:solid;
+	border-width:2px;
+	border-color:black;
+	border-radius:50%;
+	width: 50px;
+	height: 50px;
+}
+player {
+	display: block;
+	background: url(blue.png);
+	background-size:cover;
+}
+.explain {
+	position:absolute;
+	border-style:solid;
+	border-width:2px;
+	border-color:black;
+	padding:10px;
+	background:rgba(109, 65, 0, 0.66);
+	border-radius:2px;
+	width:250px;
+	right:25px;
+	bottom:5px;
+}

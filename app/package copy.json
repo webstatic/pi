@@ -1,0 +1,33 @@
+{
+  "requires": true,
+  "lockfileVersion": 1,
+  "dependencies": {
+    "async": "^3.2.3",
+    "backbone": "1.4.0",
+    "bmp180-sensor": "^1.1.0",
+    "compass-hmc5883l": "^1.1.0",
+    "forever": "^4.0.3",
+    "forever-monitor": "^3.0.3",
+    "fs-extra": "^10.0.0",
+    "gps": "^0.6.1",
+    "lazy": "^1.0.11",
+    "mkdirp": "^0.5.1",
+    "mpu6050-gyro": "^1.1.1",
+    "nedb": "^1.8.0",
+    "node-cmd": "^5.0.0",
+    "node-static": "^0.7.11",
+    "onoff": "^6.0.3",
+    "pi-servo": "^1.0.2",
+    "request": "^2.74.0",
+    "rpi-wifi-connection": "^1.0.17",
+    "serialport": "^9.2.8",
+    "servoblaster": "^0.1.1",
+    "socket.io": "^1.7.4",
+    "socket.io-client": "^1.7.4",
+    "step": "^1.0.0",
+    "systeminformation": "^5.11.15",
+    "underscore": "^1.13.2",
+    "ws": "^8.4.2",
+    "zipson": "^0.2.12"
+  }
+}

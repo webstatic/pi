@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>test control</title>
+
+    <meta charset="utf-8">
+    <title>test</title>
+    <meta http-equiv="Cache-control" content="no-cache">
+    <meta http-equiv="Expires" content="-1">
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="application-name" content="test">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+
+    <script src="../lib/underscore.js"></script>
+    <script src="../lib/jquery-2.2.4.min.js"></script>
+
+    <link href="../lib/jquery.mobile/jquery.mobile-1.4.5.min.css" rel="stylesheet" />
+    <script src="../lib/jquery.mobile/jquery.mobile-1.4.5.min.js"></script>
+
+    <script src="../lib/zipson.min.js"></script>
+
+    <script src="../lib/socket.io.min.js"></script>
+    <script src="../lib/NwLib.js"></script>
+    <script src="../NwWsClient.js"></script>
+
+    <script src="../initConn.js"></script>
+
+    <style>
+        body {
+            font-family: Courier, monospaced;
+            font-size: 10px;
+            font-weight: bold;
+
+        }
+
+        #eq>span {
+            height: 120px;
+            float: left;
+            margin: 15px
+        }
+
+        textarea.ui-input-text {
+            height: inherit !important
+        }
+
+        #map {
+            height: 500px;
+        }
+    </style>
+    <script>
+
+        window.oncontextmenu = function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            return false;
+        };
+    </script>
+</head>
+
+<body>
+
+    <div class="ui-field-contain">
+        <fieldset class="ui-grid-a">
+                <div class="ui-block-a"> <textarea name="" id="msg" style="width: 100%;" cols="30" rows="44"></textarea>
+            </div>
+                <div class="ui-block-b">
+                <button id="restart" data-mini="true">restart</button>
+                <button id="servo_on" data-mini="true">servo on</button>
+                
+                <button id="ActionControl" data-mini="true">ActionControl</button>
+
+                <button id="updateGroundAlt" data-mini="true">updateGroundAlt</button>
+                <button id="keep_altitude" data-mini="true">keep altitude</button>
+                <input type="range" name="slider-alt" id="slider-alt" step="5" min="0" max="160" value="0">
+
+                <input type="range" name="slider-1" id="slider-1" step="1" min="30" max="160" value="30">
+                <button id="speed_control" data-mini="true">Speed Control</button>
+                <input type="range" name="speed_range" id="speed_range" step="1" min="0" max="120" value="0">
+
+                <button id="stabilize_lock" data-mini="true">stabilize lock</button>
+                <button id="stabilize" data-mini="true">stabilize</button>
+
+                <!-- <button id="stabilize_roll" data-mini="true">stabilize roll</button>
+                <button id="stabilize_pitch" data-mini="true">stabilize pitch</button> -->
+               
+                <!-- <select name="flip-3" id="logdata" data-role="slider" data-mini="true">
+                    <option value="off">Off</option>
+                    <option value="on">On</option>
+                </select> -->
+                <button id="logdata" data-mini="true">logdata</button>
+
+            </div>
+        </fieldset>
+
+    </div>
+
+    <script>
+
+        $(function () {
+            
+            if (location.hostname.indexOf('192.168.') == -1) {//== "rutapon.totddns.com"
+                wsClient.oldcallService = wsClient.callService
+                wsClient.callService = function (cmd, data, cb) {
+                    wsClient.oldcallService('call_node', { cmd: cmd, data: data, did: 'a8heO-ommPuqzGWQMaB9YgPyHlgyIKR_CxTtq5JJBMk' }, cb)
+                }
+            }
+
+            let status = false
+            let testData = null
+            function updateInfo() {
+                wsClient.callService('getInfo', {}, function (result) {
+                    // result = zipson.parse(result)
+                    //var zipsonStringified = zipson.stringify(result, { detectUtcTimestamps: true });
+                    //console.log(zipsonStringified.length, JSON.stringify(result).length);
+                    //result = JSON.stringify(result)
+
+                    status = result.status;
+                    testData = result.testData
+                    $('#msg').empty();
+                    $('#msg').append("Status: " + JSON.stringify(result.status) + '\n')
+
+                    for (const key in result.gps) {
+                        if (Object.hasOwnProperty.call(result.gps, key)) {
+                            const element = result.gps[key];
+                            $('#msg').append(key + ": " + JSON.stringify(element) + '\n')
+
+                        }
+                    }
+                    $('#msg').append("SENSOR\n")
+                    for (const key in result.sensor) {
+                        if (Object.hasOwnProperty.call(result.sensor, key)) {
+                            const element = result.sensor[key];
+                            $('#msg').append(key + ": " + JSON.stringify(element) + '\n')
+
+                        }
+                    }
+                    delete result.testData.wpData
+                    $('#msg').append("TEST DATA: " + JSON.stringify(result.testData))
+
+                    updateStatus()
+                })
+            }
+            function updateStatus() {
+                if (status) {
+                    $('#servo_on').text('servo on: ' + status.control_mode)
+                    $('#logdata').text('logdata: ' + status.logData)
+                    $('#stabilize').text('stabilize: ' + testData.StabilizerSystem.enable)
+                    $('#ActionControl').text('ActionControl: ' + testData.ActionControl.enable)
+                    $('#keep_altitude').text('keep altitude: ' + testData.ActionControl.altitudeControl_enable)
+                    $('#speed_control').text('Speed Control: ' + testData.ActionControl.speedControl_enable)
+                }
+
+            }
+
+            updateInfo()
+
+            setInterval(() => {
+                updateInfo()
+            }, 1000);
+            let lastSliderValue = '30'
+
+            function updateEngPower(force) {
+                var s1value = parseInt($("#slider-1").val())
+                ///var isUpdate = false
+                var dataObj = {}
+                if (force || lastSliderValue != s1value) {
+
+                    lastSliderValue = s1value
+                    dataObj.s = s1value
+                    //isUpdate = true
+                    console.log(lastSliderValue);
+                    wsClient.callService('control', dataObj, function (result) {
+                        //result = JSON.stringify(result)
+                    })
+                }
+            }
+            function downloadAltitude() {
+                wsClient.callService('getStayAlt', {}, function (result) {
+                    //result = JSON.stringify(result)
+                    $('#slider-alt').val(result).slider("refresh");
+                })
+            }
+            let currentAltitude = 0
+            function updateAltitude() {
+                let newAlt = $('#slider-alt').val()
+                newAlt = parseInt(newAlt)
+                if (currentAltitude != newAlt) {
+                    currentAltitude = newAlt
+                    wsClient.callService('setStayAlt', { alt: newAlt }, function (result) {
+
+                    })
+                }
+            }
+            downloadAltitude()
+            setInterval(() => {
+                updateAltitude()
+                updateEngPower()
+            }, 300);
+
+            $('#logdata').click(function () {
+                if (status) {
+
+                    let newlogdata = !(status.logData)
+                    wsClient.callService('logDataState', newlogdata, function (result) { })
+                }
+            })
+            $('#stabilize').click(function () {
+                if (testData) {
+                    testData.StabilizerSystem.enable = !(testData.StabilizerSystem.enable)
+                    wsClient.callService('stabilize_enable', testData.StabilizerSystem.enable, function (result) { })
+                }
+            })
+            $('#ActionControl').click(function () {
+                if (testData) {
+                    testData.ActionControl.enable = !(testData.ActionControl.enable)
+                    wsClient.callService('ActionControl', testData.ActionControl.enable, function (result) { })
+                }
+            })
+            $('#keep_altitude').click(function () {
+                if (testData) {
+                    testData.ActionControl.altitudeControl_enable = !(testData.ActionControl.altitudeControl_enable)
+                    wsClient.callService('keep_altitude', testData.ActionControl.altitudeControl_enable, function (result) { })
+                }
+            })
+            $("#stabilize_lock").click(function () {
+                wsClient.callService('stabilize_lock', testData.StabilizerSystem.enable, function (result) { })
+            })
+            $("#updateGroundAlt").click(function () {
+                wsClient.callService('updateGroundAlt', {}, function (result) { })
+            })
+
+            $('#servo_on').click(function () {
+                if (status) {
+
+                    if (status.control_mode == 'off') {
+                        status.control_mode = 'on'
+                    } else {
+                        status.control_mode = 'off'
+                    }
+
+                    wsClient.callService('control_mode', status.control_mode, function (result) {
+                        //console.log(result);
+                        //result = JSON.stringify(result)
+                        if (status.control_mode == 'on') {
+                            setTimeout(() => {
+                                //console.log('updateEngPower');
+                                updateEngPower(true)
+                            }, 300);
+                        }
+                        //if (cb) cb(mode)
+                    })
+                }
+            })
+
+            $('#restart').click(function () {
+                wsClient.callService('restart', {}, function () { })
+            })
+        })
+    </script>
+
+</body>
+
+</html>

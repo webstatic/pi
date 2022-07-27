@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <title>Bioloop Interface</title>
+  <meta http-equiv="Cache-control" content="no-cache">
+  <meta http-equiv="Expires" content="-1">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="application-name" content="home">
+
+
+  <script>
+    // if (WebSocket) {
+    //   socket = new WebSocket('ws://localhost:8080');
+
+    //   // Connection opened
+    //   socket.addEventListener('open', function (event) {
+    //     console.log('open');
+
+
+    //     setInterval(() => {
+    //       socket.send(new Date());
+    //     }, 1000);
+    //   });
+
+    //   // Listen for messages
+    //   socket.addEventListener('message', function (event) {
+    //     console.log('Message from server ', event.data);
+    //     //var data = JSON.parse(event.data)
+
+    //     // console.log(data);
+    //     // var contain = $(".ui-field-contain")
+
+    //     // for (const id in data) {
+
+    //     //   if (Object.hasOwnProperty.call(data, id)) {
+
+    //     //     var element = data[id];
+    //     //     element = element ? "on" : "off";
+
+    //     //     swData[id] = element
+
+    //     //     $('.ui-field-contain select').eq(id).val(element).flipswitch('refresh')
+    //     //   }
+    //     // }
+    //   });
+
+    //   ws.on('close', function close() {
+    //     // จะทำงานเมื่อปิด Connection ในตัวอย่างคือ ปิด Browser
+    //     console.log('disconnected');
+    //   });
+    //   socket.onerror = () => {
+    //     console.log('onerror');
+    //     socket.close();
+    //   };
+    // }
+    var interval;
+    function connect() {
+      ws = new WebSocket('ws://192.168.1.30:8080');
+
+      ws.onopen = function () {
+        // subscribe to some channels
+        console.log('socket open');
+      };
+
+      ws.onmessage = function (e) {
+        console.log('Message:', e.data);
+      };
+
+      ws.onclose = function (e) {
+        console.log('Socket is closed. Reconnect will be attempted in 1 second.', e.reason);
+        // if (interval) clearInterval(interval)
+        setTimeout(function () {
+          connect();
+        }, 1000);
+      };
+
+      ws.onerror = function (err) {
+        // if (interval) clearInterval(interval)
+        console.error('Socket encountered error: ', err.message, 'Closing socket');
+        ws.close();
+      };
+    }
+
+    connect();
+
+    interval = setInterval(() => {
+
+      if (ws.readyState == 1) {
+        //console.log(ws);
+        ws.send(JSON.stringify(new Date().getTime()));
+      }
+
+    }, 100);
+
+  </script>
+
+  <style>
+
+  </style>
+</head>
+
+<body>
+
+</body>
+
+</html>

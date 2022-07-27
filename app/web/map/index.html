@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>MapInfo</title>
+
+    <meta charset="utf-8">
+    <title>Map</title>
+    <meta http-equiv="Cache-control" content="no-cache">
+    <meta http-equiv="Expires" content="-1">
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="application-name" content="map">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+
+    <!-- <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="http://bbecquet.github.io/Leaflet.RotatedMarker/leaflet.rotatedMarker.js"></script> -->
+
+    <link rel="stylesheet" href="leaflet/leaflet.css" />
+    <script src="leaflet/leaflet.js"></script>
+    <script src="leaflet.rotatedMarker.js"></script>
+
+    <script src="../lib/underscore.js"></script>
+    <script src="../lib/jquery-2.2.4.min.js"></script>
+
+    <link href="../lib/jquery.mobile/jquery.mobile-1.4.5.min.css" rel="stylesheet" />
+    <script src="../lib/jquery.mobile/jquery.mobile-1.4.5.min.js"></script>
+
+    <script src="../lib/zipson.min.js"></script>
+
+    <script src="../lib/socket.io.min.js"></script>
+    <script src="../lib/NwLib.js"></script>
+    <script src="../NwWsClient.js"></script>
+
+    <script src="../initConn.js"></script>
+
+    <style>
+        body {
+            font-family: Courier, monospaced;
+            font-size: 10px;
+            font-weight: bold;
+
+        }
+
+        #eq>span {
+            height: 120px;
+            float: left;
+            margin: 15px
+        }
+
+        textarea.ui-input-text {
+            height: inherit !important
+        }
+
+        #map {
+            height: 500px;
+        }
+    </style>
+    <script>
+
+        window.oncontextmenu = function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            return false;
+        };
+    </script>
+</head>
+
+<body>
+    <div id="map"></div>
+    <div class="ui-field-contain">
+        <fieldset class="ui-grid-a">
+                <div class="ui-block-a"> <textarea name="" id="msg" style="width: 100%;" cols="30" rows="16"></textarea>
+            </div>
+                <div class="ui-block-b">
+
+                <!-- <select name="flip-3" id="logdata" data-role="slider" data-mini="true">
+                    <option value="off">Off</option>
+                    <option value="on">On</option>
+                </select> -->
+                <button id="logdata">logdata</button>
+            </div>
+        </fieldset>
+    </div>
+    <script>
+
+        $(function () {
+            let lastWpDataStr = ''
+
+            if (location.hostname.indexOf('192.168.') == -1 && location.hostname.indexOf('localhost') == -1) {//== "rutapon.totddns.com"
+                wsClient.oldcallService = wsClient.callService
+                wsClient.callService = function (cmd, data, cb) {
+                    wsClient.oldcallService('call_node', { cmd: cmd, data: data, did: 'a8heO-ommPuqzGWQMaB9YgPyHlgyIKR_CxTtq5JJBMk' }, cb)
+                }
+            }
+
+            $('#logdata').click(function () {
+                if (status) {
+
+                    let newlogdata = !(status.logData)
+                    wsClient.callService('logDataState', newlogdata, function (result) { })
+                }
+            })
+            let status = false
+
+            // function showInfo() {
+            //     wsClient.callService('getInfo', {}, function (result) {
+            //         if (!result) {
+            //             console.log('no reuslt');
+            //             return;
+            //         }
+            //         // result = zipson.parse(result)
+            //         //var zipsonStringified = zipson.stringify(result, { detectUtcTimestamps: true });
+            //         //console.log(zipsonStringified.length, JSON.stringify(result).length);
+            //         //result = JSON.stringify(result)
+            //         $('#msg').empty();
+            //         $('#msg').append("Status: " + JSON.stringify(result.status) + '\n')
+            //         status = result.status;
+            //         for (const key in result.gps) {
+            //             if (Object.hasOwnProperty.call(result.gps, key)) {
+            //                 const element = result.gps[key];
+            //                 $('#msg').append(key + ": " + JSON.stringify(element) + '\n')
+
+            //             }
+            //         }
+            //         $('#msg').append("SENSOR\n")
+            //         for (const key in result.sensor) {
+            //             if (Object.hasOwnProperty.call(result.sensor, key)) {
+            //                 const element = result.sensor[key];
+            //                 $('#msg').append(key + ": " + JSON.stringify(element) + '\n')
+
+            //             }
+            //         }
+
+            //     })
+            // }
+
+            // showInfo()
+            // magnification with which the map will start
+            const zoom = 17;
+            // co-ordinates
+            const lat = 7.86824670;
+            const lng = 98.39706840;
+
+            // calling map
+
+            var arcgisonline = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
+                // attribution:
+                //     '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                maxZoom: 20,
+            })
+
+            var googleSat = L.tileLayer("https://mt0.google.com/vt?lyrs=s&x={x}&s=&y={y}&z={z}", {
+            })
+
+            var bingmap = L.tileLayer("https://webstatic.github.io/static/bingmap/{z}/{x}/{y}.png", {
+                maxZoom: 20,
+                maxNativeZoom: 18
+            })
+            //             var bing = L.tileLayer("http://ecn.t0.tiles.virtualearth.net/tiles/a{quad}.jpeg?g=129&mkt=en&stl=H", {
+            //             })
+            // "                                   https://t.ssl.ak.tiles.virtualearth.net/"
+
+
+            var baseMaps = {
+                "arcgisonline": arcgisonline,
+                "googleSat": googleSat,
+                "bingmap": bingmap,
+            };
+
+            let config = {
+                minZoom: 7,
+                maxZoom: 20,
+                layers: [googleSat, arcgisonline, bingmap]
+            };
+            const map = L.map("map", config).setView([lat, lng], zoom);
+
+            L.control.layers(baseMaps).addTo(map);
+
+
+            const funny = L.icon({
+                iconUrl: "../map/Rust__Cesna206.svg",
+                // iconSize: [50, 58], // size of the icon
+                iconSize: [50, 50], // size of the icon
+                //iconAnchor: [20, 58], // changed marker icon position
+                iconAnchor: [25, 25], // changed marker icon position
+
+                popupAnchor: [0, -60], // changed popup position
+            });
+
+
+            var pos = {
+                lat: 8.69713060,
+                lng: 98.24120390,
+            }
+            var rotationAngle = 0
+
+            var marker = L.marker(pos, {
+                icon: funny,
+                rotationAngle: rotationAngle,
+                rotationOrigin: 'center'
+            }).addTo(map)
+
+            // var marker0 = L.marker(pos, { opacity: 0.6 }).addTo(map).bindPopup("test");
+
+            var marker0 = L.circle(pos, 3).addTo(map);
+
+            setInterval(() => {
+
+                wsClient.callService('getInfo', {}, function (result) {
+                    status = result.status;
+                    if (!result) {
+                        console.log('no reuslt');
+                        return;
+                    }
+                    // console.log(result.pos);
+
+                    if (result.gps.gpsHeading) {
+                        rotationAngle = result.gps.gpsHeading
+                    } else if (result.sensor.compassHeading) {
+                        rotationAngle = result.sensor.compassHeading
+                    }
+
+                    if (result.gps.lat) {
+                        pos.lat = result.gps.lat
+                        pos.lng = result.gps.lon
+
+                    }
+                    marker.setLatLng(pos)
+                    marker0.bindPopup(JSON.stringify(pos));
+                    marker0.setLatLng(pos)
+                    map.setView(pos)
+                    //rotationAngle++
+                    marker.setRotationAngle(rotationAngle)
+
+                    $('#msg').empty();
+                    $('#msg').append("Status: " + JSON.stringify(result.status) + '\n')
+                    for (const key in result.gps) {
+                        if (Object.hasOwnProperty.call(result.gps, key)) {
+                            const element = result.gps[key];
+                            $('#msg').append(key + ": " + JSON.stringify(element) + '\n')
+
+                        }
+                    }
+                    $('#msg').append("SENSOR\n")
+                    for (const key in result.sensor) {
+                        if (Object.hasOwnProperty.call(result.sensor, key)) {
+                            const element = result.sensor[key];
+                            $('#msg').append(key + ": " + JSON.stringify(element) + '\n')
+
+                        }
+                    }
+                    if (result.testData) {
+                        var wpData = result.testData.wpData
+
+                        let wpDataStr = wpData.join(';')
+                        console.log(wpDataStr);
+                        if (lastWpDataStr != wpDataStr) {
+                            lastWpDataStr = wpDataStr
+                            wpData.forEach(element => {
+                                console.log(element);
+                                L.circle({
+                                    lat: element.lat,
+                                    lng: element.lon,
+                                }, 5, { color: 'red' }).addTo(map);
+                            });
+                        }
+
+
+                        delete result.testData.wpData
+                        $('#msg').append("TEST DATA: " + JSON.stringify(result.testData))
+                    }
+
+                })
+
+            }, 500);
+
+        })
+    </script>
+
+</body>
+
+</html>

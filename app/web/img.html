@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <title>Bioloop Interface</title>
+  <meta http-equiv="Cache-control" content="no-cache">
+  <meta http-equiv="Expires" content="-1">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="application-name" content="home">
+  <script src="lib/underscore.js"></script>
+  <script src="lib/jquery-3.6.0.min.js"></script>
+  <script src="lib/socket.io.min.js"></script>
+  <script src="lib/NwLib.js"></script>
+  <script src="NwWsClient.js"></script>
+
+  <script>
+      //  window.location.reload(true)
+  </script>
+  <style>
+
+  </style>
+</head>
+
+<body>
+
+  <img id="img" src="http://192.168.1.18/imgframe">
+  <script>
+
+    $('#getInfo').on('click', function () {
+      wsClient.callService('getInfo', {}, function (result) {
+        result = JSON.stringify(result)
+        $('#msg').prepend(result + '\n')
+
+      })
+    })
+    $(document).ready(function () {
+
+      var img = $("#img");
+      var url = img.attr("src");
+
+
+      setInterval(() => {
+        var newsrc = "http://192.168.1.18/imgframe" + `?v=${new Date().getTime()}`
+        console.log(newsrc);
+        // console.log( `?v=${new Date().getTime()}`);
+        $("#img").attr("src", newsrc);
+        // $.ajax({
+        //   url: url,
+        //   // headers: { "Cache-Control": "no-cache" }
+        //   cache: true,
+        //   // processData: false,
+        // }).done(function (result) {
+        //   // console.log(result);
+        //   // Refresh is complete, assign the image again
+
+        //   // result = result.toString('base64')
+        //   // img.attr("src", `data:image/jpg;base64,${result}`);
+
+        //   img.attr("src", url)
+        // });
+
+      }, 1000);
+    });
+
+  </script>
+</body>
+
+</html>

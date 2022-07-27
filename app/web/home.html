@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <title>Bioloop Interface</title>
+  <meta http-equiv="Cache-control" content="no-cache">
+  <meta http-equiv="Expires" content="-1">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="application-name" content="home">
+  <script src="lib/underscore.js"></script>
+  <script src="lib/jquery-3.6.0.min.js"></script>
+  <script src="lib/socket.io.min.js"></script>
+  <script src="lib/NwLib.js"></script>
+  <script src="NwWsClient.js"></script>
+
+  <script src="index.js?09"></script>
+  <script>
+      //  window.location.reload(true)
+  </script>
+  <style>
+
+  </style>
+</head>
+
+<body>
+  <textarea name="" id="msg" style="width: 100%;" cols="30" rows="10"></textarea>
+
+  <br>test<br>
+  <button id="exit">exit</button>
+  <br><br>
+  <button id="getTime">getTime</button>
+
+  <br><br>
+  <button id="test">test</button>
+  <br><br>
+  <button id="setGPIO">setGPIO</button>
+  <br><br>
+  <button id="getGPIO">getGPIO</button>
+  <br><br>
+  <button id="ShowIdList">ShowIdList</button>
+
+  <br><br>
+  <button id="getInfo">getInfo</button>
+
+  <script>
+
+    $('#getInfo').on('click', function () {
+      wsClient.callService('getInfo', {}, function (result) {
+        result = JSON.stringify(result)
+        $('#msg').prepend(result + '\n')
+
+      })
+    })
+  </script>
+</body>
+
+</html>

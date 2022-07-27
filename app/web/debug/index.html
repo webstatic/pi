@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>debug</title>
+
+    <meta charset="utf-8">
+    <title>debug</title>
+    <meta http-equiv="Cache-control" content="no-cache">
+    <meta http-equiv="Expires" content="-1">
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="application-name" content="debug">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+
+    <link rel="stylesheet" href="leaflet/leaflet.css" />
+    <script src="leaflet/leaflet.js"></script>
+    <script src="leaflet.rotatedMarker.js"></script>
+
+    <script src="../lib/underscore.js"></script>
+    <script src="../lib/jquery-2.2.4.min.js"></script>
+
+    <link href="../lib/jquery.mobile/jquery.mobile-1.4.5.min.css" rel="stylesheet" />
+    <script src="../lib/jquery.mobile/jquery.mobile-1.4.5.min.js"></script>
+
+    <script src="../lib/zipson.min.js"></script>
+
+    <script src="../lib/socket.io.min.js"></script>
+    <script src="../lib/NwLib.js"></script>
+    <script src="../NwWsClient.js"></script>
+
+    <script src="../initConn.js"></script>
+
+    <style>
+        body {
+            font-family: Courier, monospaced;
+            font-size: 10px;
+            font-weight: bold;
+
+        }
+
+        #eq>span {
+            height: 120px;
+            float: left;
+            margin: 15px
+        }
+
+        textarea.ui-input-text {
+            height: inherit !important
+        }
+
+        #map {
+            height: 400px;
+        }
+    </style>
+    <script>
+
+        window.oncontextmenu = function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            return false;
+        };
+    </script>
+</head>
+
+<body>
+
+    <div class="ui-field-contain">
+        <fieldset class="ui-grid-a">
+                <div class="ui-block-a">
+                <div id="map"></div>
+                <textarea name="" id="msg" style="width: 100%;" cols="30" rows="44"></textarea>
+            </div>
+                <div class="ui-block-b">
+                <div class="ui-field-contain">
+                    <fieldset class="ui-grid-a">
+                        <div class="ui-block-a">
+                            Moving<label id="label_moving">-/-/-</label>
+                        </div>
+                        <div class="ui-block-b">
+                            Angle<label id='label_angle'>-/-</label>
+                        </div>
+
+                    </fieldset>
+                    <fieldset class="ui-grid-a">
+                        <div class="ui-block-a">
+                            UpDown<label id="label_upDown">-/-</label>
+                        </div>
+                        <div class="ui-block-b">
+                            Alt<label id="label_alt">Na/Na</label>
+                        </div>
+
+                    </fieldset>
+
+                    <fieldset class="ui-grid-a">
+                        <div class="ui-block-a">
+                            Power<label id='label_power'>Na</label>
+                        </div>
+                        <div class="ui-block-b">
+                            Speed<label id="label_speed">Na/Na</label>
+                        </div>
+
+                    </fieldset>
+                </div>
+
+
+                <button id="servo_on" data-mini="true">servo on</button>
+                <button id="ActionControl" data-mini="true">ActionControl</button>
+
+                <button id="updateGroundAlt" data-mini="true">updateGroundAlt</button>
+                <button id="keep_altitude" data-mini="true">keep altitude</button>
+                <input type="range" name="slider-alt" id="slider-alt" step="5" min="0" max="160" value="0">
+
+                <input type="range" name="slider-1" id="slider-1" step="1" min="30" max="160" value="30">
+                <button id="speed_control" data-mini="true">Speed Control</button>
+                <input type="range" name="speed_range" id="speed_range" step="1" min="0" max="120" value="0">
+
+                <button id="logdata" data-mini="true">logdata</button>
+                <button id="restart" data-mini="true">restart</button>
+            </div>
+        </fieldset>
+
+    </div>
+
+    <script>
+
+        $(function () {
+
+            if (location.hostname.indexOf('192.168.') == -1 && location.hostname.indexOf('localhost') == -1) {//== "rutapon.totddns.com"
+                wsClient.oldcallService = wsClient.callService
+                wsClient.callService = function (cmd, data, cb) {
+                    wsClient.oldcallService('call_node', { cmd: cmd, data: data, did: 'a8heO-ommPuqzGWQMaB9YgPyHlgyIKR_CxTtq5JJBMk' }, cb)
+                }
+            }
+
+            const zoom = 17;
+            // co-ordinates
+            const lat = 7.86824670;
+            const lng = 98.39706840;
+
+            // calling map
+
+            var arcgisonline = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
+                // attribution:
+                //     '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                maxZoom: 20,
+            })
+
+            var googleSat = L.tileLayer("https://mt0.google.com/vt?lyrs=s&x={x}&s=&y={y}&z={z}", {
+            })
+
+            var bingmap = L.tileLayer("https://webstatic.github.io/static/bingmap/{z}/{x}/{y}.png", {
+                maxZoom: 20,
+                maxNativeZoom: 18
+            })
+            //             var bing = L.tileLayer("http://ecn.t0.tiles.virtualearth.net/tiles/a{quad}.jpeg?g=129&mkt=en&stl=H", {
+            //             })
+            // "                                   https://t.ssl.ak.tiles.virtualearth.net/"
+
+
+            var baseMaps = {
+                "arcgisonline": arcgisonline,
+                "googleSat": googleSat,
+                "bingmap": bingmap,
+            };
+
+            let config = {
+                minZoom: 7,
+                maxZoom: 20,
+                layers: [googleSat, arcgisonline, bingmap]
+            };
+            const map = L.map("map", config).setView([lat, lng], zoom);
+
+            L.control.layers(baseMaps).addTo(map);
+
+
+            const funny = L.icon({
+                iconUrl: "../map/Rust__Cesna206.svg",
+                // iconSize: [50, 58], // size of the icon
+                iconSize: [50, 50], // size of the icon
+                //iconAnchor: [20, 58], // changed marker icon position
+                iconAnchor: [25, 25], // changed marker icon position
+
+                popupAnchor: [0, -60], // changed popup position
+            });
+
+            const funny2 = L.icon({
+                iconUrl: "../map/Green-Up-Arrow.svg",
+                // iconSize: [50, 58], // size of the icon
+                iconSize: [50, 50], // size of the icon
+                //iconAnchor: [20, 58], // changed marker icon position
+                iconAnchor: [25, 25], // changed marker icon position
+
+                popupAnchor: [0, -60], // changed popup position
+            });
+
+            var pos = {
+                lat: 8.69713060,
+                lng: 98.24120390,
+            }
+            var rotationAngle = 0
+
+            var marker = L.marker(pos, {
+                icon: funny,
+                rotationAngle: rotationAngle,
+                rotationOrigin: 'center'
+            }).addTo(map)
+
+            var marker2 = L.marker(pos, {
+                icon: funny2,
+                rotationAngle: rotationAngle,
+                rotationOrigin: 'center',
+                opacity: 0.4
+            }).addTo(map)
+
+            // var marker0 = L.marker(pos, { opacity: 0.6 }).addTo(map).bindPopup("test");
+
+            var marker0 = L.circle(pos, 3).addTo(map);
+
+            var markerTarget = L.circle(pos, 3, { color: 'green' }).addTo(map);
+
+            let status = false
+            let testData = null
+            let infoData = null
+            let lastTargetId = null
+
+
+            let lastWpDataStr = ''
+            function updateWpData() {
+                wsClient.callService('getWpData', null, function (wpData) {
+                    if (wpData) {
+                        let wpDataStr = wpData.join(';')
+                        // console.log(wpDataStr);
+                        if (lastWpDataStr != wpDataStr) {
+                            lastWpDataStr = wpDataStr
+                            wpData.forEach(element => {
+                                console.log(element);
+                                L.circle({
+                                    lat: element.lat,
+                                    lng: element.lon,
+                                }, 5, { color: 'red' }).addTo(map);
+                            });
+                        }
+                    }
+                })
+            }
+
+            updateWpData()
+
+            function updateInfo() {
+                wsClient.callService('getInfo', {}, function (result) {
+                    status = result.status;
+                    infoData = result
+                    testData = result.testData
+                    if (!result) {
+                        console.log('no reuslt');
+                        return;
+                    }
+                    // console.log(result.pos);
+
+                    if (result.gps.gpsHeading) {
+                        rotationAngle = result.gps.gpsHeading
+                    } else if (result.sensor.compassHeading) {
+                        rotationAngle = result.sensor.compassHeading
+                    }
+
+                    if (result.gps.lat) {
+                        pos.lat = result.gps.lat
+                        pos.lng = result.gps.lon
+
+                    }
+                    marker.setLatLng(pos)
+                    marker2.setLatLng(pos)
+
+                    marker0.bindPopup(JSON.stringify(pos));
+                    marker0.setLatLng(pos)
+                    map.setView(pos)
+                    //rotationAngle++
+                    //if (currentSpeed && currentSpeed > 0) {
+                    marker.setRotationAngle(rotationAngle)
+                    if (infoData.testData.target) {
+                        marker2.setRotationAngle(infoData.testData.target)
+                    }
+                    //}
+
+                    $('#msg').empty();
+                    $('#msg').append("Status: " + JSON.stringify(result.status) + '\n')
+                    for (const key in result.gps) {
+                        if (Object.hasOwnProperty.call(result.gps, key)) {
+                            const element = result.gps[key];
+                            $('#msg').append(key + ": " + JSON.stringify(element) + '\n')
+
+                        }
+                    }
+                    $('#msg').append("SENSOR\n")
+                    for (const key in result.sensor) {
+                        if (Object.hasOwnProperty.call(result.sensor, key)) {
+                            const element = result.sensor[key];
+                            $('#msg').append(key + ": " + JSON.stringify(element) + '\n')
+
+                        }
+                    }
+                    if (result.testData) {
+
+                        if (testData.currentTarget && (lastTargetId == null || testData.currentTarget != lastTargetId)) {
+                            lastTargetId = testData.currentTarget
+                            markerTarget.setLatLng({
+                                lat: testData.currentTarget.lat,
+                                lng: testData.currentTarget.lon,
+                            })
+                        }
+
+                        delete result.testData.wpData
+                        $('#msg').append("TEST DATA: " + JSON.stringify(result.testData))
+                    }
+
+                    updateStatus()
+                })
+            }
+            let currentSpeed = 0;
+
+            function updateStatus() {
+                if (status) {
+                    $('#servo_on').text('servo on: ' + status.control_mode)
+                    $('#logdata').text('logdata: ' + status.logData)
+                    $('#stabilize').text('stabilize: ' + testData.StabilizerSystem.enable)
+                    $('#ActionControl').text('ActionControl: ' + testData.ActionControl.enable)
+                    $('#keep_altitude').text('keep altitude: ' + testData.ActionControl.altitudeControl_enable)
+                    $('#speed_control').text('Speed Control: ' + testData.ActionControl.speedControl_enable)
+                }
+
+                let currentSpeed = 'Na'
+                let targetSpeed = testData.targetSpeed != undefined ? testData.targetSpeed : 'Na'
+
+                if (infoData.gps && infoData.gps.speed) {
+                    currentSpeed = infoData.gps.speed
+
+                    // if (currentSpeed >= 0) {
+                    let gpsHeading = infoData.gps.gpsHeading != undefined ? infoData.gps.gpsHeading.toFixed(0) : 'Na'
+                    let targetAngle = infoData.testData.target != undefined ? infoData.testData.target.toFixed(0) : 'Na'
+                    $('#label_angle').text(gpsHeading + '/' + targetAngle)
+                    // }
+                }
+
+                $('#label_speed').text(currentSpeed.toFixed(1) + '/' + targetSpeed)
+                if (lastTargetSpeed != testData.targetSpeed) {
+                    lastTargetSpeed = testData.targetSpeed
+                    $('#speed_range').val(lastTargetSpeed).slider("refresh");
+                }
+
+                let altitude = 0
+                if (infoData.sensor && infoData.sensor.altitude) {
+                    altitude = infoData.sensor.altitude
+                }
+                let targetAlt = testData.stayAltitude
+                $('#label_alt').text(altitude.toFixed(1) + '/' + targetAlt)
+
+                if (!isAltSliderChanging && lastStayAltitude != targetAlt) {
+                    lastStayAltitude = targetAlt
+                    $('#slider-alt').val(lastStayAltitude).slider("refresh");
+                }
+
+                if (infoData.testData.turnServo) {
+                    let turnServo = 90 - infoData.testData.turnServo
+                    let turnDirection;
+                    if (turnServo == 0) {
+                        turnDirection = 'S'
+                    } else {
+                        turnDirection = turnServo < 0 ? 'L' : 'R'
+                    }
+
+                    let turnTime = infoData.testData.turnTime ? Math.floor(infoData.testData.turnTime) : 0
+                    $('#label_moving').text(turnDirection + '|' + turnServo.toFixed(0) + '|' + (turnTime / 1000).toFixed(1))
+                }
+                if (testData.enginePower) {
+                    $('#label_power').text(testData.enginePower)
+
+                    if (!isPowerSliderChanging && lastSliderValue != testData.enginePower) {
+                        lastSliderValue = testData.enginePower
+                        $('#slider-1').val(lastSliderValue).slider("refresh");
+                    }
+                }
+                if (testData.elevatorMove) {
+                    let elevatorMove = 90 - testData.elevatorMove
+                    let upDownDirection;
+                    if (elevatorMove == 0) {
+                        upDownDirection = 'S'
+                    } else {
+                        upDownDirection = elevatorMove > 0 ? 'U' : 'D'
+                    }
+
+                    $('#label_upDown').text(upDownDirection + '|' + elevatorMove.toFixed(2))
+                }
+            }
+
+            updateInfo()
+
+            setInterval(() => {
+                updateInfo()
+            }, 100);
+
+            $('#logdata').click(function () {
+                if (status) {
+
+                    let newlogdata = !(status.logData)
+                    wsClient.callService('logDataState', newlogdata, function (result) { })
+                }
+            })
+
+            $('#servo_on').click(function () {
+                if (status) {
+
+                    if (status.control_mode == 'off') {
+                        status.control_mode = 'on'
+                    } else {
+                        status.control_mode = 'off'
+                    }
+
+                    wsClient.callService('control_mode', status.control_mode, function (result) {
+                        //console.log(result);
+                        //result = JSON.stringify(result)
+                        if (status.control_mode == 'on') {
+                            setTimeout(() => {
+                                //console.log('updateEngPower');
+                                updateEngPower(true)
+                            }, 800);
+                        }
+                        //if (cb) cb(mode)
+                    })
+                }
+            })
+
+            $('#ActionControl').click(function () {
+                if (testData) {
+                    testData.ActionControl.enable = !(testData.ActionControl.enable)
+                    wsClient.callService('ActionControl', testData.ActionControl.enable, function (result) { })
+                }
+            })
+            $('#keep_altitude').click(function () {
+                if (testData) {
+                    testData.ActionControl.altitudeControl_enable = !(testData.ActionControl.altitudeControl_enable)
+                    wsClient.callService('keep_altitude', testData.ActionControl.altitudeControl_enable, function (result) { })
+                }
+            })
+
+            $('#speed_control').click(function () {
+                if (testData) {
+                    testData.ActionControl.speedControl_enable = !(testData.ActionControl.speedControl_enable)
+                    wsClient.callService('keep_speed', testData.ActionControl.speedControl_enable)
+                }
+            })
+
+            $("#updateGroundAlt").click(function () {
+                wsClient.callService('updateGroundAlt', {}, function (result) { })
+            })
+
+            $('#restart').click(function () {
+                wsClient.callService('restart', {}, function () { })
+            })
+
+            let lastSliderValue = 30
+            function updateEngPower(force) {
+                var s1value = parseInt($("#slider-1").val())
+                ///var isUpdate = false
+                var dataObj = {}
+                if (force || lastSliderValue != s1value) {
+
+                    lastSliderValue = s1value
+                    //dataObj.s = s1value
+                    //isUpdate = true
+                    console.log(lastSliderValue);
+
+                    wsClient.callService('setEnginePower', s1value)
+                }
+            }
+
+            let isPowerSliderChanging = false
+            $("#slider-1").slider({
+                start: function (event, ui) {
+                    isPowerSliderChanging = true
+                },
+                stop: function (event, ui) {
+                    updateEngPower(true)
+                    isPowerSliderChanging = false
+                }
+            });
+
+            let lastStayAltitude = 0
+            function updateAltitude() {
+                let newAlt = $('#slider-alt').val()
+                newAlt = parseInt(newAlt)
+                if (lastStayAltitude != newAlt) {
+                    lastStayAltitude = newAlt
+                    wsClient.callService('setStayAlt', { alt: newAlt }, function (result) {
+
+                    })
+                }
+            }
+
+            // function downloadAltitude() {
+            //     wsClient.callService('getStayAlt', {}, function (result) {
+            //         //result = JSON.stringify(result)
+            //         $('#slider-alt').val(result).slider("refresh");
+            //     })
+            // }
+
+            //downloadAltitude()
+
+            let isAltSliderChanging = false
+            $("#slider-alt").slider({
+                start: function (event, ui) {
+                    isAltSliderChanging = true
+                },
+                stop: function (event, ui) {
+                    updateAltitude(true)
+                    isAltSliderChanging = false
+                }
+            });
+
+            let lastTargetSpeed
+            function updateTargetSpeed() {
+                let newOne = $('#speed_range').val()
+                newOne = parseInt(newOne)
+                if (lastTargetSpeed != newOne) {
+                    lastTargetSpeed = newOne
+                    wsClient.callService('setTargetSpeed', newOne)
+                }
+            }
+
+            let isSpeedSliderChanging = false
+            $("#speed_range").slider({
+                start: function (event, ui) {
+                    isSpeedSliderChanging = true
+                },
+                stop: function (event, ui) {
+                    updateTargetSpeed(true)
+                    isSpeedSliderChanging = false
+                }
+            });
+
+
+            // setInterval(() => {
+            //     updateAltitude()
+            //     //updateEngPower()
+            // }, 300);
+        })
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>Info</title>
+    <meta http-equiv="Cache-control" content="no-cache">
+    <meta http-equiv="Expires" content="-1">
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="application-name" content="home">
+    <script src="lib/underscore.js"></script>
+    <script src="lib/jquery-3.6.0.min.js"></script>
+    <script src="lib/socket.io.min.js"></script>
+    <script src="lib/zipson.min.js"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/zipson@0.2.6/dist/zipson.min.js"></script> -->
+
+    <script src="lib/NwLib.js"></script>
+    <script src="NwWsClient.js"></script>
+
+    <script src="initConn.js"></script>
+    <script>
+      //  window.location.reload(true)
+    </script>
+    <style>
+
+    </style>
+</head>
+
+<body>
+    <textarea name="" id="msg" style="width: 100%;" cols="30" rows="10"></textarea>
+
+    <br>test<br>
+    <button id="exit">exit</button>
+
+    <br><br>
+    <button id="getInfo">getInfo</button>
+
+    <script>
+
+        function sendState() {
+            var result = new Date().getTime()
+            result = zipson.stringify(result, { detectUtcTimestamps: true, fullPrecisionFloats: true })
+            $('#msg').empty();
+            $('#msg').append(result + '\n')
+            wsClient.callService('update_state', result, function (result) {
+                //result = JSON.stringify(result)
+                // result = new Date(result)
+                // result = zipson.parse(result)
+                //result = new Date(result)
+
+                // for (const key in result) {
+                //     if (Object.hasOwnProperty.call(result, key)) {
+                //         const element = result[key];
+                //         $('#msg').append(key + ": " + JSON.stringify(element) + '\n')
+
+                //     }
+                // }
+            })
+        }
+        function showInfo() {
+            // var date =  zipson.stringify(new Date().getTime(), { detectUtcTimestamps: true, fullPrecisionFloats: true })
+            wsClient.callService('getInfo', "", function (result) {
+                //result = JSON.stringify(result)
+                // result = new Date(result)
+                // result = zipson.parse(result)
+                //result = new Date(result)
+                $('#msg').empty();
+                $('#msg').append(result + '\n')
+                // for (const key in result) {
+                //     if (Object.hasOwnProperty.call(result, key)) {
+                //         const element = result[key];
+                //         $('#msg').append(key + ": " + JSON.stringify(element) + '\n')
+
+                //     }
+                // }
+            })
+        }
+        $('#getInfo').on('click', function () {
+            showInfo()
+        })
+
+        // const myData = [
+        //     { "color": "red", "rating": 3 },
+        //     { "color": "blue", "rating": 9 },
+        //     { "color": "green", "rating": 0 },
+        //     { "color": "red", "rating": 4 },
+        //     { "color": "red", "rating": 4 },
+        //     { "color": "green", "rating": 3 },
+        //     { "color": "red", "rating": 8 },
+        //     { "color": "blue", "rating": 7 },
+        //     { "color": "green", "rating": 3 },
+        //     { "color": "yellow", "rating": 2 },
+        //     { "color": "red", "rating": 3 },
+        //     { "color": "green", "rating": 0 },
+        //     { "color": "green", "rating": 0 },
+        //     { "color": "yellow", "rating": 4 },
+        //     { "color": "green", "rating": 9 },
+        //     { "color": "blue", "rating": 10 },
+        //     { "color": "green", "rating": 1 },
+        //     { "color": "red", "rating": 2 }
+        // ]
+
+        // var zipsonStringified = zipson.stringify(myData, { detectUtcTimestamps: true });
+
+        // console.log(zipsonStringified);
+
+        setInterval(() => {
+            sendState()
+        }, 100);
+    </script>
+</body>
+
+</html>

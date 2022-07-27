@@ -1,0 +1,35 @@
+{
+    "remotePath": "./",
+    "host": "192.168.100.215",
+    "username": "root",
+    "password": "123qwe",
+    "port": 22,
+    "secure": false,
+    "protocol": "sftp",
+    "uploadOnSave": true,
+    "passive": false,
+    "debug": false,
+    "privateKeyPath": null,
+    "passphrase": null,
+    "agent": null,
+    "allow": [],
+    "ignore": [
+        "\\.vscode",
+        "\\.git",
+        "\\.DS_Store",
+        "\\.esp",
+        "\\.android",
+        "\\.lua",
+        "\\.nodejs",
+        "\\.app/module"
+    ],
+    "generatedFiles": {
+        "extensionsToInclude": [
+            ".js",
+            ".heml",
+            ".css",
+            ".json"
+        ],
+        "path": ""
+    }
+}

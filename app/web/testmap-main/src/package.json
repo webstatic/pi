@@ -1,0 +1,13 @@
+{
+  "name": "react-leaflet-map-with-marker",
+  "version": "1.0.0",
+  "description": "",
+  "keywords": ["map", "leaflet", "react"],
+  "homepage": "https://codesandbox.io/s/m4k3x1ynl8",
+  "main": "index.js",
+  "dependencies": {
+    "react-dom": "16.0.0",
+    "react": "16.0.0",
+    "leaflet": "latest"
+  }
+}

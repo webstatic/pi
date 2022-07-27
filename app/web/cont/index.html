@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Joystick Controls</title>
+
+    <meta charset="utf-8">
+    <title>Joystick</title>
+    <meta http-equiv="Cache-control" content="no-cache">
+    <meta http-equiv="Expires" content="-1">
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="application-name" content="Joystick">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="http://bbecquet.github.io/Leaflet.RotatedMarker/leaflet.rotatedMarker.js"></script>
+
+
+    <script src="../lib/underscore.js"></script>
+    <script src="../lib/jquery-2.2.4.min.js"></script>
+
+    <link href="../lib/jquery.mobile/jquery.mobile-1.4.5.min.css" rel="stylesheet" />
+    <script src="../lib/jquery.mobile/jquery.mobile-1.4.5.min.js"></script>
+
+    <script src="../lib/zipson.min.js"></script>
+
+    <script src="../lib/socket.io.min.js"></script>
+    <script src="../lib/NwLib.js"></script>
+    <script src="../NwWsClient.js"></script>
+
+    <script src="../initConn.js"></script>
+
+    <style>
+        body {
+            font-family: Courier, monospaced;
+            font-size: 10px;
+            font-weight: bold;
+
+        }
+
+        #eq>span {
+            height: 120px;
+            float: left;
+            margin: 15px
+        }
+
+        textarea.ui-input-text {
+            height: inherit !important
+        }
+
+        #map {
+            height: 200px;
+        }
+    </style>
+    <script>
+        window.oncontextmenu = function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            return false;
+        };
+    </script>
+</head>
+
+<body>
+
+
+    <textarea name="" id="msg" style="width: 100%;" cols="30" rows="9"></textarea>
+
+    <hr>
+    <div class="ui-field-contain">
+
+        <select name="select-native-2" id="select_mode" data-mini="true">
+            <option value="manual">Manual</option>
+            <option value="stabilize">Stabilize</option>
+            <option value="semi-auto">Semi-Auto</option>
+            <option value="auto">Auto</option>
+        </select>
+
+    </div>
+    <hr>
+    <select name="select-native-2" id="select_speed_mode" data-mini="true">
+        <option value="fallback">fallback</option>
+        <option value="stay">stay</option>
+        <option value="joy-control">joy-control</option>
+    </select>
+        <input type="range" name="slider-1" id="slider-1" step="1" min="30" max="160" value="30">
+
+    <div style="border: 1px solid red; width: 128px; position: absolute; left:20px; top:350px;">
+        <img src="../joy/images/joystick-base.png" />
+        <div id="stick1" style="position: absolute; left:32px; top:32px;">
+            <img src="../joy/images/joystick-red.png" />
+        </div>
+    </div>
+
+    <div style="border: 1px solid blue; width: 128px; position: absolute; left:210px; top:350px;">
+        <img src="../joy/images/joystick-base.png" />
+        <div id="stick2" style="position: absolute; left:32px; top:32px;">
+            <img src="../joy/images/joystick-blue.png" />
+        </div>
+    </div>
+    <br><br><br><br><br><br><br><br><br><br><br><br><br>
+    <div id="map"></div>
+    <script>
+
+
+        function showInfo() {
+            wsClient.callService('getInfo', {}, function (result) {
+                result = zipson.parse(result)
+                //var zipsonStringified = zipson.stringify(result, { detectUtcTimestamps: true });
+                //console.log(zipsonStringified.length, JSON.stringify(result).length);
+                //result = JSON.stringify(result)
+                $('#msg').empty();
+
+                for (const key in result) {
+                    if (Object.hasOwnProperty.call(result, key)) {
+                        const element = result[key];
+                        $('#msg').append(key + ": " + JSON.stringify(element) + '\n')
+
+                    }
+                }
+            })
+        }
+
+        setInterval(() => {
+            showInfo()
+        }, 1000);
+
+        class JoystickController {
+            // stickID: ID of HTML element (representing joystick) that will be dragged
+            // maxDistance: maximum amount joystick can move in any direction
+            // deadzone: joystick must move at least this amount from origin to register value change
+            constructor(stickID, maxDistance, deadzone) {
+                this.id = stickID;
+                let stick = document.getElementById(stickID);
+
+                // location from which drag begins, used to calculate offsets
+                this.dragStart = null;
+
+                // track touch identifier in case multiple joysticks present
+                this.touchId = null;
+
+                this.active = false;
+                this.value = { x: 0, y: 0 };
+
+                let self = this;
+
+                function handleDown(event) {
+                    self.active = true;
+
+                    // all drag movements are instantaneous
+                    stick.style.transition = '0s';
+
+                    // touch event fired before mouse event; prevent redundant mouse event from firing
+                    event.preventDefault();
+
+                    if (event.changedTouches)
+                        self.dragStart = { x: event.changedTouches[0].clientX, y: event.changedTouches[0].clientY };
+                    else
+                        self.dragStart = { x: event.clientX, y: event.clientY };
+
+                    // if this is a touch event, keep track of which one
+                    if (event.changedTouches)
+                        self.touchId = event.changedTouches[0].identifier;
+                }
+
+                function handleMove(event) {
+                    if (!self.active) return;
+
+                    // if this is a touch event, make sure it is the right one
+                    // also handle multiple simultaneous touchmove events
+                    let touchmoveId = null;
+                    if (event.changedTouches) {
+                        for (let i = 0; i < event.changedTouches.length; i++) {
+                            if (self.touchId == event.changedTouches[i].identifier) {
+                                touchmoveId = i;
+                                event.clientX = event.changedTouches[i].clientX;
+                                event.clientY = event.changedTouches[i].clientY;
+                            }
+                        }
+
+                        if (touchmoveId == null) return;
+                    }
+
+                    const xDiff = event.clientX - self.dragStart.x;
+                    const yDiff = event.clientY - self.dragStart.y;
+                    const angle = Math.atan2(yDiff, xDiff);
+                    const distance = Math.min(maxDistance, Math.hypot(xDiff, yDiff));
+                    const xPosition = distance * Math.cos(angle);
+                    const yPosition = distance * Math.sin(angle);
+
+                    // move stick image to new position
+                    stick.style.transform = `translate3d(${xPosition}px, ${yPosition}px, 0px)`;
+
+                    // deadzone adjustment
+                    const distance2 = (distance < deadzone) ? 0 : maxDistance / (maxDistance - deadzone) * (distance - deadzone);
+                    const xPosition2 = distance2 * Math.cos(angle);
+                    const yPosition2 = distance2 * Math.sin(angle);
+                    const xPercent = parseFloat((xPosition2 / maxDistance).toFixed(4));
+                    const yPercent = parseFloat((yPosition2 / maxDistance).toFixed(4));
+
+                    self.value = { x: xPercent, y: yPercent };
+                }
+
+                function handleUp(event) {
+                    if (!self.active) return;
+
+                    // if this is a touch event, make sure it is the right one
+                    if (event.changedTouches && self.touchId != event.changedTouches[0].identifier) return;
+
+                    // transition the joystick position back to center
+                    stick.style.transition = '.2s';
+                    stick.style.transform = `translate3d(0px, 0px, 0px)`;
+
+                    // reset everything
+                    self.value = { x: 0, y: 0 };
+                    self.touchId = null;
+                    self.active = false;
+                }
+
+                stick.addEventListener('mousedown', handleDown);
+                stick.addEventListener('touchstart', handleDown);
+                document.addEventListener('mousemove', handleMove, { passive: false });
+                document.addEventListener('touchmove', handleMove, { passive: false });
+                document.addEventListener('mouseup', handleUp);
+                document.addEventListener('touchend', handleUp);
+            }
+        }
+
+        let joystick1 = new JoystickController("stick1", 64, 8);
+        let joystick2 = new JoystickController("stick2", 64, 8);
+
+        var currentValueStr1 = ""
+        var currentValueStr2 = ""
+        var currentValue1
+        var currentValue2
+
+        function update() {
+            if (currentValueStr1 != JSON.stringify(joystick1.value)) {
+                currentValueStr1 = JSON.stringify(joystick1.value)
+                currentValue1 = joystick1.value
+                // document.getElementById("status1").innerText = "Joystick 1: \n" + currentValueStr1
+            }
+
+            if (currentValueStr2 != JSON.stringify(joystick2.value)) {
+                currentValueStr2 = JSON.stringify(joystick2.value)
+                currentValue2 = joystick2.value
+                // document.getElementById("status2").innerText = "Joystick 1: \n" + currentValueStr2
+            }
+        }
+
+        function loop() {
+            requestAnimationFrame(loop);
+            update();
+        }
+
+        loop();
+        $(function () {
+
+
+            wsClient.oldcallService = wsClient.callService
+            wsClient.callService = function (cmd, data, cb) {
+                wsClient.oldcallService('call_node', { cmd: cmd, data: data }, cb)
+            }
+
+            lastSliderValue = ""
+            lastJoy1Value = ""
+            lastJoy2Value = ""
+
+            function updateValue(force) {
+
+                if (currentValue1.y != 0 && $('#select_speed_mode').val() == "joy-control") {
+                    var s1value = $("#slider-1").val()
+                    s1value = s1value - (currentValue1.y * 5)
+                    if (s1value < 30) {
+                        s1value = 30
+                    } else if (s1value > 160) {
+                        s1value = 160
+                    }
+                    $("#slider-1").val(s1value).slider().slider("refresh");
+
+                }
+
+                var s1value = $("#slider-1").val()
+                var isUpdate = false
+                var dataObj = {}
+                if (force || lastSliderValue != s1value) {
+
+                    lastSliderValue = s1value
+                    dataObj.s = s1value
+                    isUpdate = true
+                }
+
+                if (force || lastJoy1Value != currentValueStr1) {
+                    isUpdate = true
+                    lastJoy1Value = currentValueStr1
+                    dataObj.j1 = currentValue1
+                }
+                if (force || lastJoy2Value != currentValueStr2) {
+                    isUpdate = true
+                    lastJoy2Value = currentValueStr2
+                    dataObj.j2 = currentValue2
+                }
+
+                if (force || isUpdate) {
+                    wsClient.callService('control', dataObj, function (result) {
+                        //result = JSON.stringify(result)
+                    })
+                }
+            }
+
+            setInterval(() => {
+                updateValue()
+            }, 100);
+
+            function updateMode(cb) {
+                var mode = $('#select_mode').val();
+                console.log('mode', mode);
+                wsClient.callService('control_mode', mode, function (result) {
+                    //result = JSON.stringify(result)
+                    if (cb) cb(mode)
+                })
+            }
+
+            updateMode()
+            $('#select_mode').on('change', function (value) {
+                updateMode(function (mode) {
+                    if (mode != 'auto')
+                        updateValue(true)
+                })
+            })
+
+
+            $('#select_speed_mode').on('change', function (value) {
+                if ($('#select_speed_mode').val() == "fallback") {
+                    $("#slider-1").val(30).slider().slider("refresh");
+                }
+            })
+
+
+            var fallbackTimeOut = null
+            $("#slider-1").slider({
+                stop: function (event, ui) {
+                    if (fallbackTimeOut) {
+                        clearTimeout(fallbackTimeOut)
+                    }
+                    if ($('#select_speed_mode').val() == "fallback") {
+                        fallbackTimeOut = setTimeout(() => {
+                            clearTimeout(fallbackTimeOut)
+                            $("#slider-1").val(30).slider().slider("refresh");
+                        }, 100);
+                    }
+                }
+            });
+
+            $("#waypoints_reset").click(function () {
+                wsClient.callService('waypoints_reset', {}, function (result) {
+                    alert("Waypoints Reseted.\n" + JSON.stringify(result))
+                })
+            })
+
+
+
+            // magnification with which the map will start
+            const zoom = 18;
+            // co-ordinates
+            const lat = 7.86824670;
+            const lng = 98.39706840;
+
+            // calling map
+
+            var arcgisonline = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
+                // attribution:
+                //     '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            })
+
+            var googleSat = L.tileLayer("https://mt0.google.com/vt?lyrs=s&x={x}&s=&y={y}&z={z}", {
+            })
+
+            var baseMaps = {
+                "googleSat": googleSat,
+                "arcgisonline": arcgisonline,
+            };
+
+            let config = {
+                minZoom: 7,
+                maxZoom: 18,
+                layers: [googleSat,arcgisonline]
+            };
+            const map = L.map("map", config).setView([lat, lng], zoom);
+
+            L.control.layers(baseMaps).addTo(map);
+
+            // Used to load and display tile layers on the map
+            // Most tile servers require attribution, which you can set under `Layer`
+
+            // L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            //     // attribution:
+            //     //     '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            // }).addTo(map);
+
+
+            const funny = L.icon({
+                iconUrl: "https://www.flyrusts.com/wp-content/themes/JointsWP-master/assets/images/planes/Rust__Cesna206.svg",
+                iconSize: [50, 58], // size of the icon
+                iconAnchor: [20, 58], // changed marker icon position
+                popupAnchor: [0, -60], // changed popup position
+            });
+
+
+            var pos = {
+                lat: 7.86824670,
+                lng: 98.39706840,
+            }
+            var rotationAngle = 0
+            this.marker = L.marker(pos, {
+                icon: funny,
+                rotationAngle: rotationAngle,
+                rotationOrigin: 'center'
+            }).addTo(map).bindPopup("test");
+
+            setInterval(() => {
+                pos.lat = pos.lat + 0.00001
+                this.marker.setLatLng(pos)
+                map.panTo(pos);
+
+                // rotationAngle++
+                // this.marker.setRotationAngle(rotationAngle)
+            }, 10);
+
+        })
+    </script>
+
+</body>
+
+</html>

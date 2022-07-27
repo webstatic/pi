@@ -1,0 +1,25 @@
+{
+  "requires": true,
+  "lockfileVersion": 1,
+  "dependencies": {
+    "async": "^3.2.3",
+    "backbone": "1.4.0",
+    "forever": "^4.0.3",
+    "forever-monitor": "^3.0.3",
+    "gps": "^0.6.1",
+    "nedb": "^1.8.0",
+    "node-cmd": "^5.0.0",
+    "node-static": "^0.7.11",
+    "request": "^2.74.0",
+    "serialport": "^9.2.8",
+    "servoblaster": "^0.1.1",
+    "socket.io": "^1.7.4",
+    "socket.io-client": "^1.7.4",
+    "sqlite3": "^5.0.8",
+    "step": "^1.0.0",
+    "systeminformation": "^5.11.15",
+    "underscore": "^1.13.2",
+    "ws": "^8.4.2",
+    "zipson": "^0.2.12"
+  }
+}

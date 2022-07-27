@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<title>Home Node</title>
+
+<meta charset="utf-8">
+<title>Home Node</title>
+<meta http-equiv="Cache-control" content="no-cache">
+<meta http-equiv="Expires" content="-1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="format-detection" content="telephone=no">
+<meta name="application-name" content="Home Node">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.13.2/underscore-min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+
+<link href="https://ajax.googleapis.com/ajax/libs/jquerymobile/1.4.5/jquery.mobile.min.css" rel="stylesheet" />
+<script src="https://ajax.googleapis.com/ajax/libs/jquerymobile/1.4.5/jquery.mobile.min.js"></script>
+<script src="lib/NwLib.js"></script>
+
+<script src="NwWsClient.js"></script>
+
+<script src="initConn.js"></script>
+
+<script>
+    if (window.XDomainRequest) { jQuery.ajaxTransport(function (s) { if (s.crossDomain && s.async) { if (s.timeout) { s.xdrTimeout = s.timeout; delete s.timeout; } var xdr; return { send: function (_, complete) { function callback(status, statusText, responses, responseHeaders) { xdr.onload = xdr.onerror = xdr.ontimeout = jQuery.noop; xdr = undefined; complete(status, statusText, responses, responseHeaders); } xdr = new XDomainRequest(); xdr.onload = function () { callback(200, "OK", { text: xdr.responseText }, "Content-Type: " + xdr.contentType); }; xdr.onerror = function () { callback(404, "Not Found"); }; xdr.onprogress = jQuery.noop; xdr.ontimeout = function () { callback(0, "timeout"); }; xdr.timeout = s.xdrTimeout || Number.MAX_VALUE; xdr.open(s.type, s.url); xdr.send((s.hasContent && s.data) || null); }, abort: function () { if (xdr) { xdr.onerror = jQuery.noop; xdr.abort(); } } }; } }); }
+
+    window.oncontextmenu = function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        return false;
+    };
+</script>
+
+<script> !function (b, a) { a = {}, a.param = function (c) { var a = ''; for (var b in c) c.hasOwnProperty(b) && (a.length > 0 && (a += '&'), a += encodeURI(b + '=' + c[b])); return a }, a.get = function (c, d, e) { d && (c = c + '?' + a.param(d)); var b = new XMLHttpRequest; b.open('GET', c), b.onload = function () { b.status === 200 ? e(b.responseText) : e(null, b.status) }, b.send() }, a.post = function (b, d, e, c) { d && (b = b + '?' + a.param(d)), xhr = new XMLHttpRequest, xhr.open('POST', b), xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded'), xhr.onload = function () { xhr.status === 200 ? c(xhr.responseText) : xhr.status !== 200 && c(null, xhr.status) }, xhr.send(e) }, b.ajax = a }((typeof window)[0] != 'u' ? window : this)
+
+    console.log(window.location.host);
+    // if (window.location.host && window.location.host != "") {
+    //     host = window.location.host;
+    // } else {
+    host = 'http://192.168.1.17';
+    // }
+
+    var serviceUrl = host + '/';
+    console.log(serviceUrl);
+    function callGet(func, cb) {
+        ajax.get(serviceUrl + func, null, cb)
+    }
+
+    function callPost(func, dataStr, cb) {
+        ajax.post(serviceUrl + func, false, dataStr, cb)
+    }
+
+</script>
+<style>
+
+
+</style>
+
+<body>
+    <div style="display: none;">
+        <input type="text" id="PreventChromeAutocomplete" name="PreventChromeAutocomplete"
+            autocomplete="address-level4" />
+    </div>
+    <label for="gpio">gpio</label>
+    <select name="gpio" id="gpio" data-role="flipswitch" data-mini="true">
+        <option value="off">Off</option>
+        <option value="on">On</option>
+    </select>
+
+
+    <div class="ui-field-contain">
+        <label for="flip-7">switch: </label>
+        <select name="flip-7" data-role="flipswitch" data-mini="true">
+            <option value="off">Off</option>
+            <option value="on">On</option>
+        </select>
+    </div>
+    <div class="ui-field-contain">
+        <label for="flip-7">switch: </label>
+        <select name="flip-7" data-role="flipswitch" data-mini="true">
+            <option value="off">Off</option>
+            <option value="on">On</option>
+        </select>
+    </div>
+    <div class="ui-field-contain">
+        <label for="flip-7">switch: </label>
+        <select name="flip-7" data-role="flipswitch" data-mini="true">
+            <option value="off">Off</option>
+            <option value="on">On</option>
+        </select>
+    </div>
+    <div class="ui-field-contain">
+        <label for="flip-7">switch: </label>
+        <select name="flip-7" data-role="flipswitch" data-mini="true">
+            <option value="off">Off</option>
+            <option value="on">On</option>
+        </select>
+    </div>
+    <div class="ui-field-contain">
+        <label for="flip-7">switch: </label>
+        <select name="flip-7" data-role="flipswitch" data-mini="true">
+            <option value="off">Off</option>
+            <option value="on">On</option>
+        </select>
+    </div>
+    <div class="ui-field-contain">
+        <label for="flip-7">switch: </label>
+        <select name="flip-7" data-role="flipswitch" data-mini="true">
+            <option value="off">Off</option>
+            <option value="on">On</option>
+        </select>
+    </div>
+    <div class="ui-field-contain">
+        <label for="flip-7">switch: </label>
+        <select name="flip-7" data-role="flipswitch" data-mini="true">
+            <option value="off">Off</option>
+            <option value="on">On</option>
+        </select>
+    </div>
+    <div class="ui-field-contain">
+        <label for="flip-7">switch: </label>
+        <select name="flip-7" data-role="flipswitch" data-mini="true">
+            <option value="off">Off</option>
+            <option value="on">On</option>
+        </select>
+    </div>
+    <!-- <div class="container" autocomplete="off">
+            <button>test</button>
+
+        </div> -->
+
+    <script>
+        var _configObj;
+
+
+        swData = []
+
+        $(function (params) {
+
+            console.log($('.ui-field-contain').length);
+
+            $('.ui-field-contain label').each(function (id, elem) {
+                $(elem).text('switch: ' + id)
+            })
+
+            $('.ui-field-contain select').each(function (id, elem) {
+                $(elem).attr('name', 'sw:' + id)
+            })
+            $('.ui-field-contain select').change(function (eliment) {
+                // console.log('change', $(this).attr('name'), $(this).val());
+
+                var pinId = $(this).attr('name');
+                var val = $(this).val();
+                var id = parseInt(pinId.split(":")[1])
+                if (swData[id] != val) {
+                    swData[id] = val
+                    if (socket) {
+                        socket.send('pinset_' + pinId + '_' + val);
+                    }
+
+                    // callGet('pin_set' + pinId + '_' + val, function (result) {
+                    //     console.log(result)
+                    // })
+                }
+
+            })
+            $("#gpio").change(function () {
+                // callPost("test", 'hello', function (result) {
+                //     console.log(result);
+                // })
+                $.ajax({
+                    type: "GET",
+                    url: serviceUrl + "test"
+                    // ,
+                    // data: 'hello'
+                });
+
+            })
+
+        })
+    </script>
+</body>
+
+</html>

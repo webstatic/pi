@@ -1,0 +1,26 @@
+{
+  "name": "react-leaflet-map-with-marker-forked",
+  "version": "0.0.0",
+  "description": null,
+  "keywords": [
+    "map",
+    "leaflet",
+    "react"
+  ],
+  "homepage": "https://codesandbox.io/s/m4k3x1ynl8",
+  "main": "index.js",
+  "dependencies": {
+    "react-dom": "16.0.0",
+    "react": "16.0.0",
+    "leaflet": "latest"
+  },
+  "devDependencies": {
+    "react-scripts": "1.0.0"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test --env=jsdom",
+    "eject": "react-scripts eject"
+  }
+}

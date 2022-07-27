@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Joystick Controls</title>
+
+    <meta charset="utf-8">
+    <title>Joystick</title>
+    <meta http-equiv="Cache-control" content="no-cache">
+    <meta http-equiv="Expires" content="-1">
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="application-name" content="Joystick">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+
+    <script src="/lib/underscore.js"></script>
+    <script src="/lib/jquery-2.2.4.min.js"></script>
+
+    <link href="/lib/jquery.mobile/jquery.mobile-1.4.5.min.css" rel="stylesheet" />
+    <script src="/lib/jquery.mobile/jquery.mobile-1.4.5.min.js"></script>
+
+    <script src="/lib/zipson.min.js"></script>
+
+    <script src="/lib/socket.io.min.js"></script>
+    <script src="/lib/NwLib.js"></script>
+    <script src="/NwWsClient.js"></script>
+
+    <script src="/initConn.js"></script>
+
+    <style>
+        body {
+            font-family: Courier, monospaced;
+            font-size: 10px;
+            font-weight: bold;
+
+        }
+
+        #eq>span {
+            height: 120px;
+            float: left;
+            margin: 15px
+        }
+
+        textarea.ui-input-text {
+            height: inherit !important
+        }
+    </style>
+    <script>
+        window.oncontextmenu = function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            return false;
+        };
+    </script>
+</head>
+
+<body>
+
+
+    <textarea name="" id="msg" style="width: 100%;" cols="30" rows="16"></textarea>
+
+    <hr>
+    <div class="ui-field-contain">
+        <fieldset class="ui-grid-a">
+                <div class="ui-block-a">  <select name="flip-3" id="flip-3" data-role="slider" data-mini="true">
+                            <option value="off">Off</option>
+                            <option value="on">On</option>
+                        </select></div>
+                <div class="ui-block-b">
+                <select name="select-native-2" id="select_mode" data-mini="true">
+                    <option value="manual">Manual</option>
+                    <option value="stabilize">Stabilize</option>
+                    <option value="semi-auto">Semi-Auto</option>
+                    <option value="auto">Auto</option>
+                </select>
+            </div>
+        </fieldset>
+
+
+    </div>
+    <hr>
+    <select name="select-native-2" id="select_speed_mode" data-mini="true">
+        <option value="fallback">fallback</option>
+        <option value="stay">stay</option>
+        <option value="joy-control">joy-control</option>
+    </select>
+        <input type="range" name="slider-1" id="slider-1" step="1" min="30" max="160" value="30">
+
+    <div style="border: 1px solid red; width: 128px; position: absolute; left:20px; top:450px;">
+        <img src="images/joystick-base.png" />
+        <div id="stick1" style="position: absolute; left:32px; top:32px;">
+            <img src="images/joystick-red.png" />
+        </div>
+    </div>
+
+    <div style="border: 1px solid blue; width: 128px; position: absolute; left:210px; top:450px;">
+        <img src="images/joystick-base.png" />
+        <div id="stick2" style="position: absolute; left:32px; top:32px;">
+            <img src="images/joystick-blue.png" />
+        </div>
+    </div>
+    <br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
+    <button id="waypoints_reset">Waypoints Reset</button>
+    <script>
+
+
+        function showInfo() {
+            wsClient.callService('getInfo', {}, function (result) {
+                // result = zipson.parse(result)
+                //var zipsonStringified = zipson.stringify(result, { detectUtcTimestamps: true });
+                //console.log(zipsonStringified.length, JSON.stringify(result).length);
+                //result = JSON.stringify(result)
+                $('#msg').empty();
+                $('#msg').append("Status: " + JSON.stringify(result.status) + '\n')
+                //$('#msg').append(JSON.stringify(result));
+                // $('#msg').append("Time: " + result.gps.time + "\n")
+                for (const key in result.gps) {
+                    if (Object.hasOwnProperty.call(result.gps, key)) {
+                        const element = result.gps[key];
+                        $('#msg').append(key + ": " + JSON.stringify(element) + '\n')
+
+                    }
+                }
+                $('#msg').append("SENSOR\n")
+                for (const key in result.sensor) {
+                    if (Object.hasOwnProperty.call(result.sensor, key)) {
+                        const element = result.sensor[key];
+                        $('#msg').append(key + ": " + JSON.stringify(element) + '\n')
+
+                    }
+                }
+            })
+        }
+
+        setInterval(() => {
+            showInfo()
+        }, 1000);
+
+        class JoystickController {
+            // stickID: ID of HTML element (representing joystick) that will be dragged
+            // maxDistance: maximum amount joystick can move in any direction
+            // deadzone: joystick must move at least this amount from origin to register value change
+            constructor(stickID, maxDistance, deadzone) {
+                this.id = stickID;
+                let stick = document.getElementById(stickID);
+
+                // location from which drag begins, used to calculate offsets
+                this.dragStart = null;
+
+                // track touch identifier in case multiple joysticks present
+                this.touchId = null;
+
+                this.active = false;
+                this.value = { x: 0, y: 0 };
+
+                let self = this;
+
+                function handleDown(event) {
+                    self.active = true;
+
+                    // all drag movements are instantaneous
+                    stick.style.transition = '0s';
+
+                    // touch event fired before mouse event; prevent redundant mouse event from firing
+                    event.preventDefault();
+
+                    if (event.changedTouches)
+                        self.dragStart = { x: event.changedTouches[0].clientX, y: event.changedTouches[0].clientY };
+                    else
+                        self.dragStart = { x: event.clientX, y: event.clientY };
+
+                    // if this is a touch event, keep track of which one
+                    if (event.changedTouches)
+                        self.touchId = event.changedTouches[0].identifier;
+                }
+
+                function handleMove(event) {
+                    if (!self.active) return;
+
+                    // if this is a touch event, make sure it is the right one
+                    // also handle multiple simultaneous touchmove events
+                    let touchmoveId = null;
+                    if (event.changedTouches) {
+                        for (let i = 0; i < event.changedTouches.length; i++) {
+                            if (self.touchId == event.changedTouches[i].identifier) {
+                                touchmoveId = i;
+                                event.clientX = event.changedTouches[i].clientX;
+                                event.clientY = event.changedTouches[i].clientY;
+                            }
+                        }
+
+                        if (touchmoveId == null) return;
+                    }
+
+                    const xDiff = event.clientX - self.dragStart.x;
+                    const yDiff = event.clientY - self.dragStart.y;
+                    const angle = Math.atan2(yDiff, xDiff);
+                    const distance = Math.min(maxDistance, Math.hypot(xDiff, yDiff));
+                    const xPosition = distance * Math.cos(angle);
+                    const yPosition = distance * Math.sin(angle);
+
+                    // move stick image to new position
+                    stick.style.transform = `translate3d(${xPosition}px, ${yPosition}px, 0px)`;
+
+                    // deadzone adjustment
+                    const distance2 = (distance < deadzone) ? 0 : maxDistance / (maxDistance - deadzone) * (distance - deadzone);
+                    const xPosition2 = distance2 * Math.cos(angle);
+                    const yPosition2 = distance2 * Math.sin(angle);
+                    const xPercent = parseFloat((xPosition2 / maxDistance).toFixed(4));
+                    const yPercent = parseFloat((yPosition2 / maxDistance).toFixed(4));
+
+                    self.value = { x: xPercent, y: yPercent };
+                }
+
+                function handleUp(event) {
+                    if (!self.active) return;
+
+                    // if this is a touch event, make sure it is the right one
+                    if (event.changedTouches && self.touchId != event.changedTouches[0].identifier) return;
+
+                    // transition the joystick position back to center
+                    stick.style.transition = '.2s';
+                    stick.style.transform = `translate3d(0px, 0px, 0px)`;
+
+                    // reset everything
+                    self.value = { x: 0, y: 0 };
+                    self.touchId = null;
+                    self.active = false;
+                }
+
+                stick.addEventListener('mousedown', handleDown);
+                stick.addEventListener('touchstart', handleDown);
+                document.addEventListener('mousemove', handleMove, { passive: false });
+                document.addEventListener('touchmove', handleMove, { passive: false });
+                document.addEventListener('mouseup', handleUp);
+                document.addEventListener('touchend', handleUp);
+            }
+        }
+
+        let joystick1 = new JoystickController("stick1", 64, 8);
+        let joystick2 = new JoystickController("stick2", 64, 8);
+
+        var currentValueStr1 = ""
+        var currentValueStr2 = ""
+        var currentValue1
+        var currentValue2
+
+        function update() {
+            if (currentValueStr1 != JSON.stringify(joystick1.value)) {
+                currentValueStr1 = JSON.stringify(joystick1.value)
+                currentValue1 = joystick1.value
+                // document.getElementById("status1").innerText = "Joystick 1: \n" + currentValueStr1
+            }
+
+            if (currentValueStr2 != JSON.stringify(joystick2.value)) {
+                currentValueStr2 = JSON.stringify(joystick2.value)
+                currentValue2 = joystick2.value
+                // document.getElementById("status2").innerText = "Joystick 1: \n" + currentValueStr2
+            }
+        }
+
+        function loop() {
+            requestAnimationFrame(loop);
+            update();
+            //console.log(currentValue1,currentValue2);
+        }
+
+        loop();
+        $(function () {
+
+            if (location.hostname.indexOf('192.168.') == -1) {//== "rutapon.totddns.com"
+                wsClient.oldcallService = wsClient.callService
+                wsClient.callService = function (cmd, data, cb) {
+                    wsClient.oldcallService('call_node', { cmd: cmd, data: data, did: 'a8heO-ommPuqzGWQMaB9YgPyHlgyIKR_CxTtq5JJBMk' }, cb)
+                }
+            }
+
+            lastSliderValue = ""
+            lastJoy1Value = ""
+            lastJoy2Value = ""
+
+            function updateValue(force) {
+
+                if (currentValue1.y != 0 && $('#select_speed_mode').val() == "joy-control") {
+                    var s1value = parseInt($("#slider-1").val())
+                    s1value = s1value - (currentValue1.y * 5)
+                    if (s1value < 30) {
+                        s1value = 30
+                    } else if (s1value > 160) {
+                        s1value = 160
+                    }
+                    $("#slider-1").val(s1value).slider().slider("refresh");
+
+                }
+
+                var s1value = parseInt($("#slider-1").val())
+                var isUpdate = false
+                var dataObj = {}
+                if (force || lastSliderValue != s1value) {
+
+                    lastSliderValue = s1value
+                    dataObj.s = s1value
+                    isUpdate = true
+                }
+
+                if (force || lastJoy1Value != currentValueStr1) {
+                    isUpdate = true
+                    lastJoy1Value = currentValueStr1
+                    dataObj.j1 = currentValue1
+                }
+                if (force || lastJoy2Value != currentValueStr2) {
+                    isUpdate = true
+                    lastJoy2Value = currentValueStr2
+                    dataObj.j2 = currentValue2
+                }
+
+                if (force || isUpdate) {
+                    wsClient.callService('control', dataObj, function (result) {
+                        //result = JSON.stringify(result)
+                    })
+                }
+            }
+
+            setInterval(() => {
+                updateValue()
+            }, 100);
+
+            function updateMode(cb) {
+
+                var mode = $('#select_mode').val();
+
+                var onoff = $("#flip-3").val();
+                if (onoff == 'off') {
+                    mode = 'off'
+                }
+
+                wsClient.callService('control_mode', mode, function (result) {
+                    //result = JSON.stringify(result)
+                    if (cb) cb(mode)
+                })
+            }
+
+            updateMode()
+
+            $("#flip-3").on("change", function (value) {
+                // console.log($(value.target).val())
+                updateMode(function (mode) {
+
+                    if (mode != 'auto' && mode != 'off') {
+                        // console.log('mode', mode);
+                        setTimeout(() => {
+                            updateValue(true)
+                        }, 100);
+
+                    }
+
+                })
+            })
+
+            $('#select_mode').on('change', function (value) {
+                updateMode(function (mode) {
+                    if (mode != 'auto' || mode != 'off')
+                        updateValue(true)
+                })
+            })
+
+            $('#select_speed_mode').on('change', function (value) {
+                if ($('#select_speed_mode').val() == "fallback") {
+                    $("#slider-1").val(30).slider().slider("refresh");
+                }
+            })
+
+            var fallbackTimeOut = null
+            $("#slider-1").slider({
+                stop: function (event, ui) {
+                    if (fallbackTimeOut) {
+                        clearTimeout(fallbackTimeOut)
+                    }
+                    if ($('#select_speed_mode').val() == "fallback") {
+                        fallbackTimeOut = setTimeout(() => {
+                            clearTimeout(fallbackTimeOut)
+                            $("#slider-1").val(30).slider().slider("refresh");
+                        }, 100);
+                    }
+                }
+            });
+
+
+            $("#waypoints_reset").click(function () {
+                wsClient.callService('waypoints_reset', {}, function (result) {
+                    alert("Waypoints Reseted.\n" + JSON.stringify(result))
+                })
+            })
+        })
+    </script>
+
+</body>
+
+</html>
