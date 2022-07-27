@@ -18,7 +18,8 @@ let PositionControl = Backbone.Model.extend({
         turnWith: 'rudder',//'ailerons'
 
         maxServoMove: 30,
-        movingTime: 3000,
+        minMovingTime: 500,
+        maxMovingTime: 3000,
     },
 
     initialize: function () {
@@ -146,9 +147,10 @@ let PositionControl = Backbone.Model.extend({
 
         let moveDirection = 90 + headingRelativeAngle;// move with linear value
 
+        let maxServoMove = this.attributes.maxServoMove//30
         //limit servo
-        let startDegree = 60 // 45;
-        let endDegree = 120//135;
+        let startDegree = 90 - maxServoMove // 45;
+        let endDegree = 90 + maxServoMove//120//135;
 
         if (moveDirection < startDegree) {
             moveDirection = startDegree
@@ -164,10 +166,14 @@ let PositionControl = Backbone.Model.extend({
         this.set('turnServo', moveDirection)
         this.turnServo(moveDirection)
 
+
+        let maxMovingTime = this.attributes.maxMovingTime
+      
         // is it possible to make it dynamic?
         // for example by detect number of trying to turn to the angle
-        // and increase number of timeout until curtain max 
-        let timeout = 500;//1000 
+        // and increase number of timeout until curtain max.
+        
+        let timeout = this.attributes.minMovingTime //500;//1000 
 
         let headingRelativeAngleAbs = Math.abs(headingRelativeAngle)
 
