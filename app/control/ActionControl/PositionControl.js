@@ -15,11 +15,14 @@ let PositionControl = Backbone.Model.extend({
         startPosition: {},
         currentTarget: {},
         wpData: [],
+
         turnWith: 'rudder',//'ailerons'
 
         maxServoMove: 30,
         minMovingTime: 500,
         maxMovingTime: 3000,
+
+        elevatorMoveDevise: 2
     },
 
     initialize: function () {
@@ -30,9 +33,29 @@ let PositionControl = Backbone.Model.extend({
 
             self.updateTarget() // use home (id 0) as starting point and set target to id 1 
         })
-
+        this.initializeParameter()
     },
-
+    initializeParameter: function () {
+        console.log('init PositionControlParameter');
+        if (SystemConfig.has('PositionControlParameter')) {
+            let parameter = SystemConfig.get('PositionControlParameter')
+            this.set(parameter)
+        }
+    },
+    setPositionControlParameter: function (para) {
+        this.set(para)
+        SystemConfig.set('PositionControlParameter', para)
+    },
+    getPositionControlParameter: function () {
+        let result = {
+            turnWith: this.get('turnWith'),
+            maxServoMove: this.get('maxServoMove'),
+            minMovingTime: this.get('minMovingTime'),
+            maxMovingTime: this.get('maxMovingTime'),
+            elevatorMoveDevise: this.get('elevatorMoveDevise'),
+        }
+        return result
+    },
     start: function () {
         let startPosition = { lat: SensorSystem.gps.get('lat'), lon: SensorSystem.gps.get('lon') }
         console.log('PositionControl start ', startPosition);
@@ -221,7 +244,7 @@ let PositionControl = Backbone.Model.extend({
     turnServo: function (value) {
         ServoControl.setDegree(ServoControl.planeToPin[this.attributes.turnWith], value)
 
-        let elevatorMoveDevise = 2
+        let elevatorMoveDevise = this.attributes.elevatorMoveDevise //2 
 
         let elevatorMove = 90 - value
         elevatorMove = Math.abs(elevatorMove)

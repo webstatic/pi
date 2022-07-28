@@ -7,10 +7,10 @@ process.on("message", message => {
     // process.exit();
     if (message.type == 'update_currentSeaLevel') {
         // console.log('update_currentSeaLevel', currentPressure);
-        let newcurrentSeaLevle = getSeaLevel(message.currentPressure, message.altitude)
-        if (Math.abs(newcurrentSeaLevle - sealevel) < 5000) {
-            currentSeaLevle = newcurrentSeaLevle
-            console.log('update currentSeaLevle:', currentSeaLevle);
+        let newCurrentSeaLevel = getSeaLevel(message.currentPressure, message.altitude)
+        if (Math.abs(newCurrentSeaLevel - seaLevel) < 5000) {
+            currentSeaLevel = newCurrentSeaLevel
+            console.log('update currentSeaLevel:', currentSeaLevel);
         }
     }
     console.log('form child', message);
@@ -86,11 +86,11 @@ class BufferCal {
 
 }
 
-let sealevel = 101325;
-let currentSeaLevle = null
+let seaLevel = 101325;
+let currentSeaLevel = null
 // let currentPressure = null
-let getAltitude = function (pressure, sealevel) {
-    return 44330 * (1 - Math.pow(pressure / sealevel, 1 / 5.255));
+let getAltitude = function (pressure, seaLevel) {
+    return 44330 * (1 - Math.pow(pressure / seaLevel, 1 / 5.255));
 };
 let getSeaLevel = function (pressure, altitude) {
     return pressure / Math.pow(1 - (altitude / 44330), 5.255);
@@ -468,7 +468,7 @@ function main() {
         ///////////////////////////////////////////////////////
 
         const bmp180 = require('bmp180-sensor')
-        //var sealevel = 99867; // current sea level pressure in Pa
+        //var seaLevel = 99867; // current sea level pressure in Pa
 
         // var AltConverter = require('altitude-pressure-converter');
 
@@ -505,7 +505,7 @@ function main() {
                 let temperature = data.temperature
                 let pressure = data.pressure
                 //console.log('pressure', pressure);
-                let altitude = currentSeaLevle ? getAltitude(pressure, currentSeaLevle) : null
+                let altitude = currentSeaLevel ? getAltitude(pressure, currentSeaLevel) : null
                 //console.log(altitude, data.pressure);
                 let def = Math.abs(lastalt - altitude)
 

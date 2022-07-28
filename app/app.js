@@ -371,7 +371,8 @@ NwServiceProcess.cmdMethod['keep_speed'] = function (data, cb) {
 }
 
 
-let dbConn = require("./driver/sqliteConn.js")
+let dbConn = require("./driver/sqliteConn.js");
+//const PositionControl = require("./control/ActionControl/PositionControl.js");
 dbConn.dbPath = "./data/infodata.db"
 
 let logData = false;
@@ -434,6 +435,20 @@ NwServiceProcess.cmdMethod['getServoOffset'] = function (data, cb) {
 NwServiceProcess.cmdMethod['updateGroundAlt'] = function (data, cb) {
     cb(SensorSystem.updateGroundAlt())
 }
+
+NwServiceProcess.cmdMethod['getPositionControlParameter'] = function (data, cb) {
+    let result = ActionControl.PositionControl.getPositionControlParameter()
+    cb(result)
+}
+
+NwServiceProcess.cmdMethod['setPositionControlParameter'] = function (data, cb) {
+    console.log('setPositionControlParameter', data);
+    if (data) {
+        ActionControl.PositionControl.setPositionControlParameter(data)
+    }
+    //  cb(StayAlt)
+}
+
 
 NwServiceProcess.cmdMethod['getStayAlt'] = function (data, cb) {
     let StayAlt = SystemConfig.get('stayAltitude')

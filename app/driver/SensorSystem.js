@@ -1,4 +1,4 @@
-
+const SystemConfig = require("../../driver/SystemConfig.js")
 const Backbone = require("backbone");
 const childProcess = require('child_process')
 
@@ -43,7 +43,7 @@ let SensorSystem = Backbone.Model.extend({
                         //self.update = true;
                         self.sensor.set('temperature', temperature)
                     }
-                    
+
                     if (self.sensor.get('pressure') != pressure) {
                         //self.update = true;
                         self.sensor.set('pressure', pressure)
@@ -59,9 +59,11 @@ let SensorSystem = Backbone.Model.extend({
 
                         }
                     } else if (self.gps.has('elevation')) {
-                        self.updateGroundAlt()
+                        if (!self.updateGroundAltToChildProcess()) {
+                            updateGroundAlt()
+                        }
                     }
-                
+
 
                 } else if (result.type == 'cp') {
                     self.sensor.set({ compassHeading: result.compassHeading, variance: result.variance })
@@ -114,24 +116,47 @@ let SensorSystem = Backbone.Model.extend({
             });
         }
         startGps()
-      
+
     },
+
+    //!!! problem is when child process restart it lost ground alt
+    //??? and updateGroundAlt is do in sky
+    //Get Ground Altitude when start main module and speed < 1 (not flying)
+    //And save to config file.
+    //GAlt that will send to child module or when main module start with speed > 1 (restart between flying)
+    //will come form the config file
     updateCurrentSeaLevel: function (altitude, currentPressure) {
         if (this.Sensor_child_process) {
             this.Sensor_child_process.send({ type: 'update_currentSeaLevel', altitude: altitude, currentPressure: currentPressure })
             return true
         }
     },
+    updateGroundAltToChildProcess: function () {
+        let baseAlt = this.sensor.get('baseAlt')
+        if (baseAlt) {
+            return this.updateCurrentSeaLevel(baseAlt.elevation, baseAlt.pressure)
+        }
+    },
     updateGroundAlt: function () {
-        let elevation = this.gps.get('elevation')
-        let pressure = this.sensor.get('pressure')
-        console.log('initGroundAlt', elevation,pressure);
+        let elevation, pressure
+
+        if (this.gps.get('speed') < 1) {
+            elevation = this.gps.get('elevation')
+            pressure = this.sensor.get('pressure')
+        } else {
+            let baseAlt = SystemConfig.get('baseAlt')
+            elevation = baseAlt.elevation
+            pressure = baseAlt.pressure
+        }
+
+        console.log('initGroundAlt', elevation, pressure);
 
         if (elevation && pressure) {
-            if (this.updateCurrentSeaLevel(elevation, pressure)) {
-                this.sensor.set('baseAlt', { elevation: elevation, pressure: pressure })
-                return true
-            }
+            let baseAlt = { elevation: elevation, pressure: pressure }
+            this.sensor.set('baseAlt', baseAlt)
+            SystemConfig.set('baseAlt', baseAlt)
+
+            return this.updateGroundAltToChildProcess()
         }
     },
 
