@@ -51,7 +51,7 @@
         }
 
         #map {
-            height: 400px;
+            height: 320px;
         }
     </style>
     <script>
@@ -71,6 +71,86 @@
                 <div class="ui-block-a">
                 <div id="map"></div>
                 <!-- <textarea name="" id="msg" style="width: 100%;" cols="30" rows="44"></textarea> -->
+                <select name="select-native-2" id="select_turningMode" data-mini="true">
+                    <option value="ailerons">ailerons</option>
+                    <option value="rudder">rudder</option>
+
+                </select>
+                <fieldset class="ui-grid-b">
+                    <div class="ui-block-b">
+                        maxServoMove:<label id="label_maxServoMove">0</label>
+                    </div>
+                    <div class="ui-block-b">
+                        <button data-mini="true" id="button_maxServoMove_inc">++</button>
+                    </div>
+                    <div class="ui-block-c">
+                        <button data-mini="true" id="button_maxServoMove_dec">--</button>
+                    </div>
+
+                </fieldset>
+                <fieldset class="ui-grid-b">
+                    <div class="ui-block-b">
+                        minMovingTime:<label id="label_minMovingTime">0</label>
+                    </div>
+                    <div class="ui-block-b">
+                        <button data-mini="true" id="button_minMovingTime_inc">++</button>
+                    </div>
+                    <div class="ui-block-c">
+                        <button data-mini="true" id="button_minMovingTime_dec">--</button>
+                    </div>
+
+                </fieldset>
+                <fieldset class="ui-grid-b">
+                    <div class="ui-block-b">
+                        maxMovingTime:<label id="label_maxMovingTime">0</label>
+                    </div>
+                    <div class="ui-block-b">
+                        <button data-mini="true" id="button_maxMovingTime_inc">++</button>
+                    </div>
+                    <div class="ui-block-c">
+                        <button data-mini="true" id="button_maxMovingTime_dec">--</button>
+                    </div>
+
+                </fieldset>
+                <fieldset class="ui-grid-b">
+                    <div class="ui-block-b">
+                        elevatorMoveDevise:<label id="label_elevatorMoveDevise">0</label>
+                    </div>
+                    <div class="ui-block-b">
+                        <button data-mini="true" id="button_elevatorMoveDevise_inc">++</button>
+                    </div>
+                    <div class="ui-block-c">
+                        <button data-mini="true" id="button_elevatorMoveDevise_dec">--</button>
+                    </div>
+
+                </fieldset>
+
+                <fieldset class="ui-grid-b">
+                    <div class="ui-block-b">
+                        elevator_maxServoMove:<label id="label_elevator_maxServoMove">0</label>
+                    </div>
+                    <div class="ui-block-b">
+                        <button data-mini="true" id="button_elevator_maxServoMove_inc">++</button>
+                    </div>
+                    <div class="ui-block-c">
+                        <button data-mini="true" id="button_elevator_maxServoMove_dec">--</button>
+                    </div>
+
+                </fieldset>
+
+                <fieldset class="ui-grid-b">
+                    <div class="ui-block-b">
+                        pitchLimit:<label id="label_pitchLimit">0</label>
+                    </div>
+                    <div class="ui-block-b">
+                        <button data-mini="true" id="button_pitchLimit_inc">++</button>
+                    </div>
+                    <div class="ui-block-c">
+                        <button data-mini="true" id="button_pitchLimit_dec">--</button>
+                    </div>
+
+                </fieldset>
+
             </div>
                 <div class="ui-block-b">
                 <div class="ui-field-contain">
@@ -549,6 +629,134 @@
             //     updateAltitude()
             //     //updateEngPower()
             // }, 300);
+
+            let positionControlParameter = null
+            function getPositionControlParameter() {
+                //currentServoOffset.ailerons++;
+                wsClient.callService('getPositionControlParameter', {}, function (data) {
+                    positionControlParameter = data
+                    updatePositionControlParameterView(data)
+                })
+            }
+
+            function updatePositionControlParameter() {
+                wsClient.callService('setPositionControlParameter', positionControlParameter, function (data) {
+                    updatePositionControlParameterView(positionControlParameter)
+                })
+                //
+            }
+
+            function updatePositionControlParameterView(data) {
+                //console.log('updatePositionControlParameterView', data);
+
+                $('#select_turningMode').val(data.turnWith).selectmenu("refresh", true)
+                $("#label_maxServoMove").text(data.maxServoMove)
+                $("#label_minMovingTime").text(data.minMovingTime)
+                $("#label_maxMovingTime").text(data.maxMovingTime)
+                $("#label_elevatorMoveDevise").text(data.elevatorMoveDevise)
+            }
+            /////////////////////////   maxServoMove
+            $('#button_maxServoMove_inc').click(function (params) {
+                positionControlParameter.maxServoMove++
+                updatePositionControlParameter()
+            })
+
+            $('#button_maxServoMove_dec').click(function (params) {
+                positionControlParameter.maxServoMove--
+                updatePositionControlParameter()
+            })
+
+            /////////////////////////   minMovingTime
+            $('#button_minMovingTime_inc').click(function (params) {
+                positionControlParameter.minMovingTime = positionControlParameter.minMovingTime + 100
+                updatePositionControlParameter()
+            })
+
+            $('#button_minMovingTime_dec').click(function (params) {
+                positionControlParameter.minMovingTime = positionControlParameter.minMovingTime - 100
+                updatePositionControlParameter()
+            })
+
+            /////////////////////////   maxMovingTime
+            $('#button_maxMovingTime_inc').click(function (params) {
+                positionControlParameter.maxMovingTime = positionControlParameter.maxMovingTime + 100
+                updatePositionControlParameter()
+            })
+
+            $('#button_maxMovingTime_dec').click(function (params) {
+                positionControlParameter.maxMovingTime = positionControlParameter.maxMovingTime - 100
+                updatePositionControlParameter()
+            })
+
+            /////////////////////////   elevatorMoveDevise
+            $('#button_elevatorMoveDevise_inc').click(function (params) {
+                positionControlParameter.elevatorMoveDevise = positionControlParameter.elevatorMoveDevise + 0.1
+                updatePositionControlParameter()
+            })
+
+            $('#button_elevatorMoveDevise_dec').click(function (params) {
+                positionControlParameter.elevatorMoveDevise = positionControlParameter.elevatorMoveDevise - 0.1
+                updatePositionControlParameter()
+            })
+
+            $('#select_turningMode').on('change', function (value) {
+                var mode = $('#select_turningMode').val();
+                positionControlParameter.turnWith = mode
+                updatePositionControlParameter()
+                // wsClient.callService('setGyroMode', mode, function (result) {
+                //     //result = JSON.stringify(result)
+                //     if (cb) cb(mode)
+                // })
+
+            })
+            getPositionControlParameter()
+
+
+            let altitudeControlParameter = null
+            function getAltitudeControlParameter() {
+                //currentServoOffset.ailerons++;
+
+                wsClient.callService('getAltitudeControlParameter', {}, function (data) {
+                    altitudeControlParameter = data
+                    updateAltitudeControlParameterView(data)
+                })
+            }
+
+            function updateAltitudeControlParameter() {
+                wsClient.callService('setAltitudeControlParameter', altitudeControlParameter, function (data) {
+                    updateAltitudeControlParameterView(altitudeControlParameter)
+                })
+                //
+            }
+
+            function updateAltitudeControlParameterView(data) {
+                console.log('updateAltitudeControlParameterView', data);
+
+                $("#label_elevator_maxServoMove").text(data.maxServoMove)
+                $("#label_pitchLimit").text(data.pitchLimit)
+            }
+            /////////////////////////   maxServoMove
+            $('#button_elevator_maxServoMove_inc').click(function (params) {
+                altitudeControlParameter.maxServoMove++
+                updateAltitudeControlParameter()
+            })
+
+            $('#button_elevator_maxServoMove_dec').click(function (params) {
+                altitudeControlParameter.maxServoMove--
+                updateAltitudeControlParameter()
+            })
+
+            /////////////////////////   minMovingTime
+            $('#button_pitchLimit_inc').click(function (params) {
+                altitudeControlParameter.pitchLimit++
+                updateAltitudeControlParameter()
+            })
+
+            $('#button_pitchLimit_dec').click(function (params) {
+                altitudeControlParameter.pitchLimit--
+                updateAltitudeControlParameter()
+            })
+            getAltitudeControlParameter()
         })
     </script>
 
