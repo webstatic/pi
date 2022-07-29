@@ -70,7 +70,7 @@
         <fieldset class="ui-grid-a">
                 <div class="ui-block-a">
                 <div id="map"></div>
-                <textarea name="" id="msg" style="width: 100%;" cols="30" rows="44"></textarea>
+                <!-- <textarea name="" id="msg" style="width: 100%;" cols="30" rows="44"></textarea> -->
             </div>
                 <div class="ui-block-b">
                 <div class="ui-field-contain">
@@ -284,23 +284,24 @@
                     }
                     //}
 
-                    $('#msg').empty();
-                    $('#msg').append("Status: " + JSON.stringify(result.status) + '\n')
-                    for (const key in result.gps) {
-                        if (Object.hasOwnProperty.call(result.gps, key)) {
-                            const element = result.gps[key];
-                            $('#msg').append(key + ": " + JSON.stringify(element) + '\n')
+                    // $('#msg').empty();
+                    // $('#msg').append("Status: " + JSON.stringify(result.status) + '\n')
+                    // for (const key in result.gps) {
+                    //     if (Object.hasOwnProperty.call(result.gps, key)) {
+                    //         const element = result.gps[key];
+                    //         $('#msg').append(key + ": " + JSON.stringify(element) + '\n')
 
-                        }
-                    }
-                    $('#msg').append("SENSOR\n")
-                    for (const key in result.sensor) {
-                        if (Object.hasOwnProperty.call(result.sensor, key)) {
-                            const element = result.sensor[key];
-                            $('#msg').append(key + ": " + JSON.stringify(element) + '\n')
+                    //     }
+                    // }
+                    // $('#msg').append("SENSOR\n")
+                    // for (const key in result.sensor) {
+                    //     if (Object.hasOwnProperty.call(result.sensor, key)) {
+                    //         const element = result.sensor[key];
+                    //         $('#msg').append(key + ": " + JSON.stringify(element) + '\n')
 
-                        }
-                    }
+                    //     }
+                    // }
+                   
                     if (result.testData) {
 
                         if (testData.currentTarget && (lastTargetId == null || testData.currentTarget != lastTargetId)) {
@@ -312,7 +313,8 @@
                         }
 
                         delete result.testData.wpData
-                        $('#msg').append("TEST DATA: " + JSON.stringify(result.testData))
+                    
+                       // $('#msg').append("TEST DATA: " + JSON.stringify(result.testData))
                     }
 
                     updateStatus()
