@@ -331,6 +331,10 @@ NwServiceProcess.cmdMethod['stabilize_lock'] = function (data, cb) {
     cb(StabilizerSystem.get('offsetValue'))
 }
 
+NwServiceProcess.cmdMethod['updateRollPitchOffset'] = function (data, cb) {
+    cb(SensorSystem.updateRollPitchOffset())
+}
+
 var ActionControlEnable = false;
 NwServiceProcess.cmdMethod['ActionControl'] = function (data, cb) {
     ActionControlEnable = data

@@ -195,9 +195,10 @@
                 <input type="range" name="slider-1" id="slider-1" step="1" min="30" max="160" value="30">
                 <button id="speed_control" data-mini="true">Speed Control</button>
                 <input type="range" name="speed_range" id="speed_range" step="1" min="0" max="120" value="0">
-
+                <button id="updateRollPitchOffset" data-mini="true">updateRollPitchOffset</button>
                 <button id="logdata" data-mini="true">logdata</button>
                 <button id="restart" data-mini="true">restart</button>
+
             </div>
         </fieldset>
 
@@ -485,6 +486,13 @@
                 updateInfo()
             }, 100);
 
+            $('#updateRollPitchOffset').click(function () {
+                wsClient.callService('updateRollPitchOffset', null, function (result) {
+                    if (!result) {
+                        alert('update fails!!!')
+                    }
+                })
+            })
             $('#logdata').click(function () {
                 if (status) {
 

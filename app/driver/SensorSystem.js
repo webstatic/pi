@@ -7,7 +7,8 @@ let SensorSystem = Backbone.Model.extend({
     sensor: new Backbone.Model(),
     gps: new Backbone.Model(),
     defaults: {
-        target: 0
+        target: 0,
+        roll_pitch_offset: { roll: 0, pitch: 0 }
     },
     Sensor_child_process: null,
     Gps_child_process: null,
@@ -28,10 +29,22 @@ let SensorSystem = Backbone.Model.extend({
             self.Sensor_child_process.on("message", result => {
                 // console.log(result)
                 if (result.type == 'rp') {
-                    let roll_pitch = { roll: result.roll, pitch: result.pitch }
+                    let roll_pitch_offset = self.attributes.roll_pitch_offset
+
+                    let rpOriginal = {
+                        roll: result.roll,
+                        pitch: result.pitch
+                    }
+
+                    let roll_pitch = {
+                        roll: result.roll - roll_pitch_offset.roll,
+                        pitch: result.pitch - roll_pitch_offset.pitch
+                    }
 
                     // if (self.sensor.get('roll_pitch') == null || (roll_pitch.roll != self.sensor.get('roll_pitch').roll || roll_pitch.pitch != self.sensor.get('roll_pitch').pitch)) {
                     // self.update = true;
+
+                    self.sensor.set('rpOriginal', rpOriginal)
                     self.sensor.set('roll_pitch', roll_pitch)
                     // }
                 } else if (result.type == 'bmp') {
@@ -116,7 +129,21 @@ let SensorSystem = Backbone.Model.extend({
             });
         }
         startGps()
+        self.initRollPitchOffset()
+    },
+    initRollPitchOffset: function () {
+        if (SystemConfig.has('roll_pitch_offset')) {
+            this.set('roll_pitch_offset', SystemConfig.get('roll_pitch_offset'))
+        }
+    },
 
+    updateRollPitchOffset: function () {
+        if (this.sensor.has('rpOriginal')) {
+            let roll_pitch = this.sensor.get('rpOriginal')
+            SystemConfig.set('roll_pitch_offset', roll_pitch)
+            this.set('roll_pitch_offset', roll_pitch)
+            return true
+        }
     },
 
     //!!! problem is when child process restart it lost ground alt
