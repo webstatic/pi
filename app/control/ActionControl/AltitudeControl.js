@@ -11,6 +11,8 @@ let AltitudeControl = Backbone.Model.extend({
     defaults: {
         enable: false,
         stayAltitude: 15,//m
+
+        maxServoMove: 30,
     },
 
     initialize: function () {
@@ -37,7 +39,8 @@ let AltitudeControl = Backbone.Model.extend({
 
         let pitch = SensorSystem.sensor.get("roll_pitch").pitch
 
-        if (pitch > -30 && pitch < 10) {
+        let pitchLimit = 20
+        if (pitch > -pitchLimit && pitch < pitchLimit) {
             //console.log(pitch);
             let altStay = this.attributes.stayAltitude
             let alt = SensorSystem.getAltitude()
@@ -86,8 +89,10 @@ let AltitudeControl = Backbone.Model.extend({
                 // } else 
                 // {
                 //limit servo
-                let startDegree = 60//45//
-                let endDegree = 120//135//;
+                let maxServoMove = this.attributes.maxServoMove//30
+
+                let startDegree = 90 - maxServoMove //60//45//
+                let endDegree = 90 + maxServoMove //120//135//;
 
                 let servoMove
                 if (diffAbs > 5) {
