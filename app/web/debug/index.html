@@ -301,7 +301,7 @@
 
                     //     }
                     // }
-                   
+
                     if (result.testData) {
 
                         if (testData.currentTarget && (lastTargetId == null || testData.currentTarget != lastTargetId)) {
@@ -313,8 +313,8 @@
                         }
 
                         delete result.testData.wpData
-                    
-                       // $('#msg').append("TEST DATA: " + JSON.stringify(result.testData))
+
+                        // $('#msg').append("TEST DATA: " + JSON.stringify(result.testData))
                     }
 
                     updateStatus()
@@ -333,19 +333,22 @@
                 }
 
                 let currentSpeed = 'Na'
+                let gpsHeading = 'Na'
+                let targetAngle = 'Na'
                 let targetSpeed = testData.targetSpeed != undefined ? testData.targetSpeed : 'Na'
 
                 if (infoData.gps && infoData.gps.speed) {
-                    currentSpeed = infoData.gps.speed
+                    currentSpeed = infoData.gps.speed.toFixed(1)
 
                     // if (currentSpeed >= 0) {
-                    let gpsHeading = infoData.gps.gpsHeading != undefined ? infoData.gps.gpsHeading.toFixed(0) : 'Na'
-                    let targetAngle = infoData.testData.target != undefined ? infoData.testData.target.toFixed(0) : 'Na'
-                    $('#label_angle').text(gpsHeading + '/' + targetAngle)
+                    gpsHeading = infoData.gps.gpsHeading != undefined ? infoData.gps.gpsHeading.toFixed(0) : 'Na'
+                    targetAngle = infoData.testData.target != undefined ? infoData.testData.target.toFixed(0) : 'Na'
+
                     // }
                 }
+                $('#label_angle').text(gpsHeading + '/' + targetAngle + '|' + infoData.sensor.variance)
 
-                $('#label_speed').text(currentSpeed.toFixed(1) + '/' + targetSpeed)
+                $('#label_speed').text(currentSpeed + '/' + targetSpeed)
                 if (lastTargetSpeed != testData.targetSpeed) {
                     lastTargetSpeed = testData.targetSpeed
                     $('#speed_range').val(lastTargetSpeed).slider("refresh");
