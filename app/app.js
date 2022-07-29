@@ -445,6 +445,7 @@ NwServiceProcess.cmdMethod['setPositionControlParameter'] = function (data, cb) 
     console.log('setPositionControlParameter', data);
     if (data) {
         ActionControl.PositionControl.setPositionControlParameter(data)
+        if (cb) cb()
     }
     //  cb(StayAlt)
 }

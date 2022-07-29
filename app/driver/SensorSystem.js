@@ -1,4 +1,4 @@
-const SystemConfig = require("../../driver/SystemConfig.js")
+const SystemConfig = require("../driver/SystemConfig.js")
 const Backbone = require("backbone");
 const childProcess = require('child_process')
 
