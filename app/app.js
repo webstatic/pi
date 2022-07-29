@@ -449,7 +449,19 @@ NwServiceProcess.cmdMethod['setPositionControlParameter'] = function (data, cb) 
     }
     //  cb(StayAlt)
 }
+NwServiceProcess.cmdMethod['getAltitudeControlParameter'] = function (data, cb) {
+    let result = ActionControl.AltitudeControl.getParameter()
+    cb(result)
+}
 
+NwServiceProcess.cmdMethod['setAltitudeControlParameter'] = function (data, cb) {
+    console.log('setPositionControlParameter', data);
+    if (data) {
+        ActionControl.AltitudeControl.setParameter(data)
+        if (cb) cb()
+    }
+    //  cb(StayAlt)
+}
 
 NwServiceProcess.cmdMethod['getStayAlt'] = function (data, cb) {
     let StayAlt = SystemConfig.get('stayAltitude')

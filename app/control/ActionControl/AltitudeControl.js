@@ -13,11 +13,34 @@ let AltitudeControl = Backbone.Model.extend({
         stayAltitude: 15,//m
 
         maxServoMove: 30,
+        pitchLimit: 20
     },
 
     initialize: function () {
         SensorSystem.initGroundAlt()
         this.updateStayAltitude()
+
+        this.initializeParameter()
+    },
+    initializeParameter: function () {
+        console.log('init AltitudeControlParameter');
+        if (SystemConfig.has('AltitudeControlParameter')) {
+            let parameter = SystemConfig.get('AltitudeControlParameter')
+            this.set(parameter)
+        } else {
+            this.setParameter(this.getParameter())
+        }
+    },
+    setParameter: function (para) {
+        this.set(para)
+        SystemConfig.set('AltitudeControlParameter', para)
+    },
+    getParameter: function () {
+        let result = {
+            maxServoMove: this.attributes.maxServoMove,
+            pitchLimit: this.attributes.pitchLimit
+        }
+        return result
     },
 
     updateStayAltitude: function (newStayAlt) {
@@ -39,7 +62,8 @@ let AltitudeControl = Backbone.Model.extend({
 
         let pitch = SensorSystem.sensor.get("roll_pitch").pitch
 
-        let pitchLimit = 20
+        let pitchLimit = this.attributes.pitchLimit// 20
+
         if (pitch > -pitchLimit && pitch < pitchLimit) {
             //console.log(pitch);
             let altStay = this.attributes.stayAltitude
@@ -109,7 +133,6 @@ let AltitudeControl = Backbone.Model.extend({
 
                 //this.elevatorState.state = servoMove > 90 ? 'up' : 'down'
                 this.elevatorState.value = servoMove
-
 
                 console.log('move elevator', servoMove);
                 this.moveServo(servoMove)

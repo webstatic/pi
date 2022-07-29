@@ -40,6 +40,8 @@ let PositionControl = Backbone.Model.extend({
         if (SystemConfig.has('PositionControlParameter')) {
             let parameter = SystemConfig.get('PositionControlParameter')
             this.set(parameter)
+        } else {
+            this.setPositionControlParameter(this.getPositionControlParameter())
         }
     },
     setPositionControlParameter: function (para) {
@@ -48,11 +50,11 @@ let PositionControl = Backbone.Model.extend({
     },
     getPositionControlParameter: function () {
         let result = {
-            turnWith: this.get('turnWith'),
-            maxServoMove: this.get('maxServoMove'),
-            minMovingTime: this.get('minMovingTime'),
-            maxMovingTime: this.get('maxMovingTime'),
-            elevatorMoveDevise: this.get('elevatorMoveDevise'),
+            turnWith: this.attributes.turnWith,
+            maxServoMove: this.attributes.maxServoMove,
+            minMovingTime: this.attributes.minMovingTime,
+            maxMovingTime: this.attributes.maxMovingTime,
+            elevatorMoveDevise: this.attributes.elevatorMoveDevise
         }
         return result
     },
